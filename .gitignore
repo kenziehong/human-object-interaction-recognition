@@ -1,0 +1,19 @@
+# Môi trường
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+# Dữ liệu và kết quả (chỉ giữ file mô tả dữ liệu)
+data/*
+!data/vcoco_6class_crops/
+data/vcoco_6class_crops/*
+!data/vcoco_6class_crops/README.md
+features/
+results/
+
+# Bí mật
+.env
+CLAUDE.md
