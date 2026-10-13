@@ -152,3 +152,490 @@ work_on_computer       0.59      0.83      0.69        12
        macro avg       0.45      0.44      0.40       216
     weighted avg       0.74      0.79      0.75       216
 
+
+==============================================================================
+resnet50 + xgboost
+Best params: {"model__colsample_bytree": 1.0, "model__learning_rate": 0.2, "model__max_depth": 9, "model__n_estimators": 200, "model__subsample": 0.85}
+Search best validation macro-F1: 0.5222
+Saved/reporting model fit: train only
+
+[train] accuracy: 1.0000; macro-F1: 1.0000
+                  precision    recall  f1-score   support
+
+       eat_drink       1.00      1.00      1.00        18
+            hold       1.00      1.00      1.00        22
+            ride       1.00      1.00      1.00         8
+   talk_on_phone       1.00      1.00      1.00        11
+         unknown       1.00      1.00      1.00       183
+work_on_computer       1.00      1.00      1.00        19
+
+        accuracy                           1.00       261
+       macro avg       1.00      1.00      1.00       261
+    weighted avg       1.00      1.00      1.00       261
+
+[val] accuracy: 0.9048; macro-F1: 0.5222
+                  precision    recall  f1-score   support
+
+       eat_drink       0.67      0.67      0.67         3
+            hold       0.00      0.00      0.00         1
+            ride       0.00      0.00      0.00         0
+   talk_on_phone       0.00      0.00      0.00         1
+         unknown       0.92      0.97      0.94        35
+work_on_computer       1.00      1.00      1.00         2
+
+        accuracy                           0.90        42
+       macro avg       0.43      0.44      0.44        42
+    weighted avg       0.86      0.90      0.88        42
+
+
+[test] accuracy: 0.7917; macro-F1: 0.4277
+Best model fit on train: embedding_ml/outputs/models/resnet50_xgboost.joblib
+                  precision    recall  f1-score   support
+
+       eat_drink       0.47      0.80      0.59        10
+            hold       0.20      0.05      0.08        21
+            ride       0.00      0.00      0.00         3
+   talk_on_phone       0.40      0.17      0.24        12
+         unknown       0.87      0.94      0.90       158
+work_on_computer       0.65      0.92      0.76        12
+
+        accuracy                           0.79       216
+       macro avg       0.43      0.48      0.43       216
+    weighted avg       0.73      0.79      0.75       216
+
+
+==============================================================================
+efficientnet_b0 + logreg
+Best params: {"model__C": 5.298316906283707}
+Search best validation macro-F1: 0.5569
+Saved/reporting model fit: train only
+
+[train] accuracy: 1.0000; macro-F1: 1.0000
+                  precision    recall  f1-score   support
+
+       eat_drink       1.00      1.00      1.00        18
+            hold       1.00      1.00      1.00        22
+            ride       1.00      1.00      1.00         8
+   talk_on_phone       1.00      1.00      1.00        11
+         unknown       1.00      1.00      1.00       183
+work_on_computer       1.00      1.00      1.00        19
+
+        accuracy                           1.00       261
+       macro avg       1.00      1.00      1.00       261
+    weighted avg       1.00      1.00      1.00       261
+
+[val] accuracy: 0.8810; macro-F1: 0.5569
+                  precision    recall  f1-score   support
+
+       eat_drink       0.75      1.00      0.86         3
+            hold       0.00      0.00      0.00         1
+            ride       0.00      0.00      0.00         0
+   talk_on_phone       0.00      0.00      0.00         1
+         unknown       0.94      0.91      0.93        35
+work_on_computer       1.00      1.00      1.00         2
+
+        accuracy                           0.88        42
+       macro avg       0.45      0.49      0.46        42
+    weighted avg       0.89      0.88      0.88        42
+
+
+[test] accuracy: 0.7407; macro-F1: 0.5042
+Best model fit on train: embedding_ml/outputs/models/efficientnet_b0_logreg.joblib
+                  precision    recall  f1-score   support
+
+       eat_drink       0.27      0.30      0.29        10
+            hold       0.13      0.10      0.11        21
+            ride       0.67      0.67      0.67         3
+   talk_on_phone       0.40      0.50      0.44        12
+         unknown       0.87      0.88      0.88       158
+work_on_computer       0.62      0.67      0.64        12
+
+        accuracy                           0.74       216
+       macro avg       0.49      0.52      0.50       216
+    weighted avg       0.73      0.74      0.74       216
+
+
+==============================================================================
+efficientnet_b0 + svm
+Best params: {"model__C": 0.18873918221350977, "model__gamma": "scale", "model__kernel": "linear"}
+Search best validation macro-F1: 0.5600
+Saved/reporting model fit: train only
+
+[train] accuracy: 1.0000; macro-F1: 1.0000
+                  precision    recall  f1-score   support
+
+       eat_drink       1.00      1.00      1.00        18
+            hold       1.00      1.00      1.00        22
+            ride       1.00      1.00      1.00         8
+   talk_on_phone       1.00      1.00      1.00        11
+         unknown       1.00      1.00      1.00       183
+work_on_computer       1.00      1.00      1.00        19
+
+        accuracy                           1.00       261
+       macro avg       1.00      1.00      1.00       261
+    weighted avg       1.00      1.00      1.00       261
+
+[val] accuracy: 0.9048; macro-F1: 0.5600
+                  precision    recall  f1-score   support
+
+       eat_drink       0.75      1.00      0.86         3
+            hold       0.00      0.00      0.00         1
+            ride       0.00      0.00      0.00         0
+   talk_on_phone       0.00      0.00      0.00         1
+         unknown       0.94      0.94      0.94        35
+work_on_computer       1.00      1.00      1.00         2
+
+        accuracy                           0.90        42
+       macro avg       0.45      0.49      0.47        42
+    weighted avg       0.89      0.90      0.89        42
+
+
+[test] accuracy: 0.7639; macro-F1: 0.4830
+Best model fit on train: embedding_ml/outputs/models/efficientnet_b0_svm.joblib
+                  precision    recall  f1-score   support
+
+       eat_drink       0.25      0.20      0.22        10
+            hold       0.27      0.19      0.22        21
+            ride       0.50      0.33      0.40         3
+   talk_on_phone       0.56      0.42      0.48        12
+         unknown       0.85      0.92      0.88       158
+work_on_computer       0.73      0.67      0.70        12
+
+        accuracy                           0.76       216
+       macro avg       0.52      0.45      0.48       216
+    weighted avg       0.74      0.76      0.75       216
+
+
+==============================================================================
+efficientnet_b0 + random_forest
+Best params: {"model__max_depth": 10, "model__max_features": "log2", "model__min_samples_leaf": 1, "model__min_samples_split": 2, "model__n_estimators": 200}
+Search best validation macro-F1: 0.5630
+Saved/reporting model fit: train only
+
+[train] accuracy: 1.0000; macro-F1: 1.0000
+                  precision    recall  f1-score   support
+
+       eat_drink       1.00      1.00      1.00        18
+            hold       1.00      1.00      1.00        22
+            ride       1.00      1.00      1.00         8
+   talk_on_phone       1.00      1.00      1.00        11
+         unknown       1.00      1.00      1.00       183
+work_on_computer       1.00      1.00      1.00        19
+
+        accuracy                           1.00       261
+       macro avg       1.00      1.00      1.00       261
+    weighted avg       1.00      1.00      1.00       261
+
+[val] accuracy: 0.9286; macro-F1: 0.5630
+                  precision    recall  f1-score   support
+
+       eat_drink       0.75      1.00      0.86         3
+            hold       0.00      0.00      0.00         1
+            ride       0.00      0.00      0.00         0
+   talk_on_phone       0.00      0.00      0.00         1
+         unknown       0.94      0.97      0.96        35
+work_on_computer       1.00      1.00      1.00         2
+
+        accuracy                           0.93        42
+       macro avg       0.45      0.50      0.47        42
+    weighted avg       0.89      0.93      0.91        42
+
+
+[test] accuracy: 0.7917; macro-F1: 0.3758
+Best model fit on train: embedding_ml/outputs/models/efficientnet_b0_random_forest.joblib
+                  precision    recall  f1-score   support
+
+       eat_drink       0.42      0.50      0.45        10
+            hold       0.00      0.00      0.00        21
+            ride       0.00      0.00      0.00         3
+   talk_on_phone       1.00      0.08      0.15        12
+         unknown       0.82      0.99      0.90       158
+work_on_computer       0.75      0.75      0.75        12
+
+        accuracy                           0.79       216
+       macro avg       0.50      0.39      0.38       216
+    weighted avg       0.72      0.79      0.73       216
+
+
+==============================================================================
+efficientnet_b0 + xgboost
+Best params: {"model__colsample_bytree": 0.7, "model__learning_rate": 0.1, "model__max_depth": 3, "model__n_estimators": 400, "model__subsample": 0.7}
+Search best validation macro-F1: 0.5630
+Saved/reporting model fit: train only
+
+[train] accuracy: 1.0000; macro-F1: 1.0000
+                  precision    recall  f1-score   support
+
+       eat_drink       1.00      1.00      1.00        18
+            hold       1.00      1.00      1.00        22
+            ride       1.00      1.00      1.00         8
+   talk_on_phone       1.00      1.00      1.00        11
+         unknown       1.00      1.00      1.00       183
+work_on_computer       1.00      1.00      1.00        19
+
+        accuracy                           1.00       261
+       macro avg       1.00      1.00      1.00       261
+    weighted avg       1.00      1.00      1.00       261
+
+[val] accuracy: 0.9286; macro-F1: 0.5630
+                  precision    recall  f1-score   support
+
+       eat_drink       0.75      1.00      0.86         3
+            hold       0.00      0.00      0.00         1
+            ride       0.00      0.00      0.00         0
+   talk_on_phone       0.00      0.00      0.00         1
+         unknown       0.94      0.97      0.96        35
+work_on_computer       1.00      1.00      1.00         2
+
+        accuracy                           0.93        42
+       macro avg       0.45      0.50      0.47        42
+    weighted avg       0.89      0.93      0.91        42
+
+
+[test] accuracy: 0.7685; macro-F1: 0.3165
+Best model fit on train: embedding_ml/outputs/models/efficientnet_b0_xgboost.joblib
+                  precision    recall  f1-score   support
+
+       eat_drink       0.17      0.10      0.12        10
+            hold       0.43      0.14      0.21        21
+            ride       0.00      0.00      0.00         3
+   talk_on_phone       0.00      0.00      0.00        12
+         unknown       0.82      0.97      0.89       158
+work_on_computer       0.67      0.67      0.67        12
+
+        accuracy                           0.77       216
+       macro avg       0.35      0.31      0.32       216
+    weighted avg       0.69      0.77      0.72       216
+
+
+==============================================================================
+vit_b_16 + logreg
+Best params: {"model__C": 0.001}
+Search best validation macro-F1: 0.5600
+Saved/reporting model fit: train only
+
+[train] accuracy: 0.9080; macro-F1: 0.8986
+                  precision    recall  f1-score   support
+
+       eat_drink       0.78      1.00      0.88        18
+            hold       0.60      0.95      0.74        22
+            ride       1.00      1.00      1.00         8
+   talk_on_phone       0.85      1.00      0.92        11
+         unknown       1.00      0.87      0.93       183
+work_on_computer       0.86      1.00      0.93        19
+
+        accuracy                           0.91       261
+       macro avg       0.85      0.97      0.90       261
+    weighted avg       0.93      0.91      0.91       261
+
+[val] accuracy: 0.9048; macro-F1: 0.5600
+                  precision    recall  f1-score   support
+
+       eat_drink       0.75      1.00      0.86         3
+            hold       0.00      0.00      0.00         1
+            ride       0.00      0.00      0.00         0
+   talk_on_phone       0.00      0.00      0.00         1
+         unknown       0.94      0.94      0.94        35
+work_on_computer       1.00      1.00      1.00         2
+
+        accuracy                           0.90        42
+       macro avg       0.45      0.49      0.47        42
+    weighted avg       0.89      0.90      0.89        42
+
+
+[test] accuracy: 0.7500; macro-F1: 0.5573
+Best model fit on train: embedding_ml/outputs/models/vit_b_16_logreg.joblib
+                  precision    recall  f1-score   support
+
+       eat_drink       0.41      0.70      0.52        10
+            hold       0.26      0.33      0.29        21
+            ride       1.00      0.33      0.50         3
+   talk_on_phone       0.41      0.58      0.48        12
+         unknown       0.96      0.82      0.88       158
+work_on_computer       0.56      0.83      0.67        12
+
+        accuracy                           0.75       216
+       macro avg       0.60      0.60      0.56       216
+    weighted avg       0.81      0.75      0.77       216
+
+
+==============================================================================
+vit_b_16 + svm
+Best params: {"model__C": 0.001, "model__gamma": "scale", "model__kernel": "linear"}
+Search best validation macro-F1: 0.5600
+Saved/reporting model fit: train only
+
+[train] accuracy: 0.9157; macro-F1: 0.9158
+                  precision    recall  f1-score   support
+
+       eat_drink       0.75      1.00      0.86        18
+            hold       0.58      0.95      0.72        22
+            ride       1.00      1.00      1.00         8
+   talk_on_phone       1.00      1.00      1.00        11
+         unknown       1.00      0.89      0.94       183
+work_on_computer       0.95      1.00      0.97        19
+
+        accuracy                           0.92       261
+       macro avg       0.88      0.97      0.92       261
+    weighted avg       0.94      0.92      0.92       261
+
+[val] accuracy: 0.9048; macro-F1: 0.5600
+                  precision    recall  f1-score   support
+
+       eat_drink       0.75      1.00      0.86         3
+            hold       0.00      0.00      0.00         1
+            ride       0.00      0.00      0.00         0
+   talk_on_phone       0.00      0.00      0.00         1
+         unknown       0.94      0.94      0.94        35
+work_on_computer       1.00      1.00      1.00         2
+
+        accuracy                           0.90        42
+       macro avg       0.45      0.49      0.47        42
+    weighted avg       0.89      0.90      0.89        42
+
+
+[test] accuracy: 0.7685; macro-F1: 0.5062
+Best model fit on train: embedding_ml/outputs/models/vit_b_16_svm.joblib
+                  precision    recall  f1-score   support
+
+       eat_drink       0.38      0.60      0.46        10
+            hold       0.25      0.38      0.30        21
+            ride       0.00      0.00      0.00         3
+   talk_on_phone       0.60      0.50      0.55        12
+         unknown       0.93      0.86      0.89       158
+work_on_computer       0.83      0.83      0.83        12
+
+        accuracy                           0.77       216
+       macro avg       0.50      0.53      0.51       216
+    weighted avg       0.80      0.77      0.78       216
+
+
+==============================================================================
+vit_b_16 + random_forest
+Best params: {"model__max_depth": 10, "model__max_features": "log2", "model__min_samples_leaf": 4, "model__min_samples_split": 10, "model__n_estimators": 200}
+Search best validation macro-F1: 0.5630
+Saved/reporting model fit: train only
+
+[train] accuracy: 0.9732; macro-F1: 0.9710
+                  precision    recall  f1-score   support
+
+       eat_drink       0.90      1.00      0.95        18
+            hold       0.81      1.00      0.90        22
+            ride       1.00      1.00      1.00         8
+   talk_on_phone       1.00      1.00      1.00        11
+         unknown       1.00      0.96      0.98       183
+work_on_computer       1.00      1.00      1.00        19
+
+        accuracy                           0.97       261
+       macro avg       0.95      0.99      0.97       261
+    weighted avg       0.98      0.97      0.97       261
+
+[val] accuracy: 0.9286; macro-F1: 0.5630
+                  precision    recall  f1-score   support
+
+       eat_drink       0.75      1.00      0.86         3
+            hold       0.00      0.00      0.00         1
+            ride       0.00      0.00      0.00         0
+   talk_on_phone       0.00      0.00      0.00         1
+         unknown       0.94      0.97      0.96        35
+work_on_computer       1.00      1.00      1.00         2
+
+        accuracy                           0.93        42
+       macro avg       0.45      0.50      0.47        42
+    weighted avg       0.89      0.93      0.91        42
+
+
+[test] accuracy: 0.7685; macro-F1: 0.4090
+Best model fit on train: embedding_ml/outputs/models/vit_b_16_random_forest.joblib
+                  precision    recall  f1-score   support
+
+       eat_drink       0.29      0.40      0.33        10
+            hold       0.38      0.29      0.32        21
+            ride       0.00      0.00      0.00         3
+   talk_on_phone       0.50      0.08      0.14        12
+         unknown       0.85      0.92      0.88       158
+work_on_computer       0.71      0.83      0.77        12
+
+        accuracy                           0.77       216
+       macro avg       0.45      0.42      0.41       216
+    weighted avg       0.74      0.77      0.74       216
+
+
+==============================================================================
+vit_b_16 + xgboost
+Best params: {"model__colsample_bytree": 0.85, "model__learning_rate": 0.1, "model__max_depth": 5, "model__n_estimators": 200, "model__subsample": 0.7}
+Search best validation macro-F1: 0.5222
+Saved/reporting model fit: train only
+
+[train] accuracy: 1.0000; macro-F1: 1.0000
+                  precision    recall  f1-score   support
+
+       eat_drink       1.00      1.00      1.00        18
+            hold       1.00      1.00      1.00        22
+            ride       1.00      1.00      1.00         8
+   talk_on_phone       1.00      1.00      1.00        11
+         unknown       1.00      1.00      1.00       183
+work_on_computer       1.00      1.00      1.00        19
+
+        accuracy                           1.00       261
+       macro avg       1.00      1.00      1.00       261
+    weighted avg       1.00      1.00      1.00       261
+
+[val] accuracy: 0.9048; macro-F1: 0.5222
+                  precision    recall  f1-score   support
+
+       eat_drink       0.67      0.67      0.67         3
+            hold       0.00      0.00      0.00         1
+            ride       0.00      0.00      0.00         0
+   talk_on_phone       0.00      0.00      0.00         1
+         unknown       0.92      0.97      0.94        35
+work_on_computer       1.00      1.00      1.00         2
+
+        accuracy                           0.90        42
+       macro avg       0.43      0.44      0.44        42
+    weighted avg       0.86      0.90      0.88        42
+
+
+[test] accuracy: 0.7917; macro-F1: 0.3780
+Best model fit on train: embedding_ml/outputs/models/vit_b_16_xgboost.joblib
+                  precision    recall  f1-score   support
+
+       eat_drink       0.30      0.30      0.30        10
+            hold       0.43      0.14      0.21        21
+            ride       0.00      0.00      0.00         3
+   talk_on_phone       0.00      0.00      0.00        12
+         unknown       0.82      0.99      0.90       158
+work_on_computer       1.00      0.75      0.86        12
+
+        accuracy                           0.79       216
+       macro avg       0.42      0.36      0.38       216
+    weighted avg       0.71      0.79      0.74       216
+
+
+Best models fitted on train:
+- embedding_ml/outputs/models/resnet50_logreg.joblib
+- embedding_ml/outputs/models/resnet50_random_forest.joblib
+- embedding_ml/outputs/models/efficientnet_b0_random_forest.joblib
+- embedding_ml/outputs/models/efficientnet_b0_xgboost.joblib
+- embedding_ml/outputs/models/vit_b_16_random_forest.joblib
+- embedding_ml/outputs/models/efficientnet_b0_svm.joblib
+- embedding_ml/outputs/models/vit_b_16_logreg.joblib
+- embedding_ml/outputs/models/vit_b_16_svm.joblib
+- embedding_ml/outputs/models/efficientnet_b0_logreg.joblib
+- embedding_ml/outputs/models/resnet50_xgboost.joblib
+- embedding_ml/outputs/models/vit_b_16_xgboost.joblib
+- embedding_ml/outputs/models/resnet50_svm.joblib
+
+Test results by embedding/classifier (best config per pair):
+- resnet50 + logreg: accuracy=0.7731, macro-F1=0.4427
+- resnet50 + svm: accuracy=0.7963, macro-F1=0.4616
+- resnet50 + random_forest: accuracy=0.7870, macro-F1=0.4029
+- resnet50 + xgboost: accuracy=0.7917, macro-F1=0.4277
+- efficientnet_b0 + logreg: accuracy=0.7407, macro-F1=0.5042
+- efficientnet_b0 + svm: accuracy=0.7639, macro-F1=0.4830
+- efficientnet_b0 + random_forest: accuracy=0.7917, macro-F1=0.3758
+- efficientnet_b0 + xgboost: accuracy=0.7685, macro-F1=0.3165
+- vit_b_16 + logreg: accuracy=0.7500, macro-F1=0.5573
+- vit_b_16 + svm: accuracy=0.7685, macro-F1=0.5062
+- vit_b_16 + random_forest: accuracy=0.7685, macro-F1=0.4090
+- vit_b_16 + xgboost: accuracy=0.7917, macro-F1=0.3780
