@@ -10,3 +10,5 @@ tqdm
 ipykernel
 nbconvert
 xgboost
+torch
+torchvision
