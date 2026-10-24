@@ -10,3 +10,4 @@ tqdm
 ipykernel
 nbconvert
 xgboost
+pypdf

@@ -2,6 +2,8 @@
 
 Chạy:  python 01_extract_features.py --version f01            (ghi vào features/f01/)
        python 01_extract_features.py --version f_test --limit 60 (thử nhanh)
+       python 01_extract_features.py --version f02 --labels data/train_test_split/labels_split_unk3000.csv \
+              --data_dir data/dataset_6class_crops
 Không ghi đè phiên bản đã có.
 """
 import argparse
@@ -17,7 +19,7 @@ from joblib import Parallel, delayed
 from sklearn.cluster import MiniBatchKMeans
 
 import config as C
-from data_utils import load_labels, read_image
+from data_utils import load_labels, read_image, set_labels_csv
 import versioning as V
 from features import SIMPLE_EXTRACTORS, bovw_all, geom_feat, sift_desc_pos, sift_descriptors
 
@@ -85,7 +87,14 @@ def main():
     ap.add_argument("--note", default="", help="mô tả ngắn phiên bản (ghi vào run_info.json)")
     ap.add_argument("--limit", type=int, default=None, help="chỉ lấy N ảnh mỗi split (thử nhanh)")
     ap.add_argument("--n_jobs", type=int, default=-1)
+    ap.add_argument("--labels", default=None,
+                    help="file nhãn có cột split (tương đối với thư mục gốc repo); mặc định config.LABELS_CSV")
+    ap.add_argument("--data_dir", default=None, help="thư mục ảnh mà crop_path tính từ đó; mặc định cạnh --labels")
     args = ap.parse_args()
+    if args.labels:
+        set_labels_csv(args.labels, args.data_dir)
+    labels_csv, data_dir = (str(p.relative_to(C.ROOT)) for p in (C.LABELS_CSV, C.DATA_DIR))
+    print("Dữ liệu:", labels_csv, "| ảnh:", data_dir)
 
     out_dir = V.prepare_dir(V.feat_dir(args.version), "y_train.npy")
     res_dir = out_dir           # thời gian trích đặc trưng lưu cùng phiên bản đặc trưng
@@ -105,8 +114,10 @@ def main():
             df = df.groupby("label_id", group_keys=False).head(max(1, args.limit // 6)).reset_index(drop=True)
         dfs[split] = df
         np.save(out_dir / f"y_{split}.npy", df["label_id"].to_numpy())
-        df[["crop_path", "label", "label_id", "image_id", "ann_id", "crop_w", "crop_h"]].to_csv(
-            out_dir / f"meta_{split}.csv", index=False)
+        # Cột định danh khác nhau giữa các bộ dữ liệu (V-COCO: image_id/ann_id; bộ gộp: dataset/source_image)
+        meta_cols = [c for c in ["crop_path", "label", "label_id", "dataset", "source_image", "image_id", "ann_id",
+                                 "crop_w", "crop_h"] if c in df]
+        df[meta_cols].to_csv(out_dir / f"meta_{split}.csv", index=False)
 
     # Hình học từ bbox (không cần đọc ảnh)
     for split, df in dfs.items():
@@ -169,7 +180,7 @@ def main():
     tdf["machine"] = f"{platform.machine()} {os.cpu_count()} CPU, n_jobs={args.n_jobs}"
     tdf.to_csv(res_dir / "timing_extract.csv", index=False)
     print(f"Thời gian trích đặc trưng -> {res_dir / 'timing_extract.csv'}")
-    V.write_run_info(out_dir, "01_extract_features", args, note=args.note,
+    V.write_run_info(out_dir, "01_extract_features", args, note=args.note, labels_csv=labels_csv, data_dir=data_dir,
                      n_images={s: len(d) for s, d in dfs.items()}, total_wall_s=round(time.time() - t_start, 1),
                      feature_config=V.feature_config())
     print(tdf.groupby("block")[["cpu_s"]].sum().assign(
