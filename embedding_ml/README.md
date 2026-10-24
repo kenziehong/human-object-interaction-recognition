@@ -34,9 +34,41 @@ hợp được fit trên train để ghi báo cáo train/val. Sau khi hoàn tấ
 classification report, chỉ lưu trong `embedding_ml/outputs/all_results.txt`.
 
 ```bash
-python embedding_ml/train_search.py --n-iter 30
+python embedding_ml/train_search.py
 ```
 
 `train_search.py` chỉ dùng val để chọn cấu hình; test chỉ được đọc ở bước cuối
 sau khi đã chọn cấu hình tốt nhất trong cả 12 search. Có thể đổi số lần lấy
 mẫu, đường dẫn CSV và thư mục output qua các tham số CLI; xem `--help`.
+# Trích embedding và chia train/val/test
+
+Với dữ liệu hiện tại trong `data/dataset_6class_crops_v2/` (mỗi nhãn là một
+folder), trích embedding trước khi gán split:
+
+```bash
+python embedding_ml/extract_embedding.py \
+  --data-dir data/dataset_6class_crops_v2 \
+  --output-dir data/embedding_csv \
+  --batch-size 32
+```
+
+Mặc định trích ResNet50, EfficientNet-B0 và ViT-B/16; kết quả nằm trong
+`data/embedding_csv/embeddings.csv`, theo định dạng các cột embedding JSON như
+CSV hiện có. Có thể chỉ trích một backbone bằng `--models resnet50`.
+
+Sau đó chia phân tầng theo nhãn, truyền seed và ba tỉ lệ theo thứ tự train, val,
+test:
+
+```bash
+python embedding_ml/split.py \
+  --input data/embedding_csv/embeddings.csv \
+  --ratios 0.7 0.15 0.15 \
+  --seed 42
+```
+
+Mặc định kết quả được ghi vào `data/embedding_csv/splits/`: `train.csv`,
+`val.csv`, `test.csv` và `embeddings_split.csv` (toàn bộ dòng, có cột `dataset`
+được gán). Tổng tỉ lệ được chuẩn hóa nếu không đúng 1. Việc phân bổ số mẫu mỗi
+lớp dùng phương pháp phần dư lớn nhất để tổng số mẫu của các split khớp chính
+xác với dữ liệu đầu vào.
+

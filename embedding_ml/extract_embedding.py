@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Extract frozen ImageNet features from ResNet50, EfficientNet-B0 and ViT-B/16.
 
-Expected dataset structure:
+Expected dataset structure (either form):
+    data/dataset_6class_crops_v2/<label>/*.{jpg,png,...}
+or
     data/vcoco_6class_crops/
         train/<label>/*.{jpg,png,...}
         val/<label>/*.{jpg,png,...}
@@ -108,12 +110,16 @@ def collect_image_records(data_dir: Path) -> Tuple[List[Dict[str, Any]], Dict[st
     all_labels = set()
     stt = 1
 
-    for split in SPLITS:
-        split_dir = data_dir / split
+    # Flat class folders are used before train/val/test assignment.
+    has_split_dirs = all((data_dir / split).is_dir() for split in SPLITS)
+    source_dirs = (
+        [(split, data_dir / split) for split in SPLITS]
+        if has_split_dirs else [("", data_dir)]
+    )
+
+    for split, split_dir in source_dirs:
         if not split_dir.is_dir():
-            raise FileNotFoundError(
-                f"Thiếu thư mục '{split}'. Dataset cần có đủ train/, val/, test/: {split_dir}"
-            )
+            raise FileNotFoundError(f"Không tìm thấy thư mục dữ liệu: {split_dir}")
 
         label_dirs = sorted(p for p in split_dir.iterdir() if p.is_dir())
         if not label_dirs:
@@ -151,8 +157,11 @@ def collect_image_records(data_dir: Path) -> Tuple[List[Dict[str, Any]], Dict[st
 
     print(f"Found {len(records):,} images.")
     counts = Counter(record["dataset"] for record in records)
-    for split in SPLITS:
-        print(f"  {split}: {counts.get(split, 0):,} images")
+    if has_split_dirs:
+        for split in SPLITS:
+            print(f"  {split}: {counts.get(split, 0):,} images")
+    else:
+        print("  Chưa gán split (sẽ gán bằng split.py).")
     print(f"Labels ({len(label_to_id)}): {label_to_id}")
     return records, label_to_id
 
@@ -386,8 +395,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--data-dir",
         type=Path,
-        default=Path("data/vcoco_6class_crops"),
-        help="Dataset root containing train/, val/, and test/.",
+        default=Path("data/dataset_6class_crops_v2"),
+        help="Dataset root with label folders or train/val/test/<label>/ folders.",
     )
     parser.add_argument(
         "--output-dir",

@@ -10,9 +10,11 @@ __pycache__/
 data/*
 !data/vcoco_6class_crops/
 data/vcoco_6class_crops/*
+data/dataset_6class_crops_v2/*
 !data/vcoco_6class_crops/README.md
 features/
 results/
+embedding_ml/outputs/models/*
 
 # Bí mật
 .env

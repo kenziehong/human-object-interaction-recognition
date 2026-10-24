@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.stats import loguniform, randint, uniform
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
@@ -44,23 +45,34 @@ def make_search(classifier: str, seed: int):
     if classifier == "logreg":
         estimator = LogisticRegression(max_iter=3000, class_weight="balanced", random_state=seed)
         return Pipeline([("scale", StandardScaler()), ("model", estimator)]), {
-            "model__C": np.logspace(-3, 3, 30),
+            # The current ResNet50 search favored C ~= 2.6e-3, near the
+            # lower end of the old range. Search more finely below 1e-3.
+            "model__C": loguniform(1e-5, 1.0),
         }
     if classifier == "svm":
         estimator = SVC(class_weight="balanced", random_state=seed)
-        return Pipeline([("scale", StandardScaler()), ("model", estimator)]), {
-            "model__C": np.logspace(-3, 3, 30),
-            "model__kernel": ["linear", "rbf"],
-            "model__gamma": ["scale", "auto"],
-        }
+        # gamma only affects RBF; separate distributions avoid spending
+        # samples on irrelevant gamma values for the linear kernel.
+        return Pipeline([("scale", StandardScaler()), ("model", estimator)]), [
+            {
+                "model__kernel": ["linear"],
+                "model__C": loguniform(1e-3, 1e2),
+            },
+            {
+                "model__kernel": ["rbf"],
+                "model__C": loguniform(1e-2, 1e2),
+                "model__gamma": loguniform(1e-5, 1.0),
+            },
+        ]
     if classifier == "random_forest":
         estimator = RandomForestClassifier(n_jobs=-1, class_weight="balanced", random_state=seed)
         return Pipeline([("model", estimator)]), {
-            "model__n_estimators": [200, 400, 600],
-            "model__max_depth": [None, 10, 20, 40],
+            "model__n_estimators": [200, 400, 600, 800, 1200],
+            "model__max_depth": [None, 10, 20, 40, 60],
             "model__min_samples_split": [2, 5, 10],
-            "model__min_samples_leaf": [1, 2, 4],
-            "model__max_features": ["sqrt", "log2", 0.5],
+            "model__min_samples_leaf": [1, 2, 4, 8],
+            "model__max_features": ["sqrt", 0.3, 0.5, 0.8],
+            "model__class_weight": ["balanced", "balanced_subsample"],
         }
     if classifier == "xgboost":
         estimator = XGBClassifier(
@@ -68,10 +80,14 @@ def make_search(classifier: str, seed: int):
             random_state=seed, tree_method="hist",
         )
         return Pipeline([("model", estimator)]), {
-            "model__n_estimators": [200, 400, 600],
-            "model__max_depth": [3, 5, 7, 9],
-            "model__learning_rate": [0.01, 0.03, 0.1, 0.2],
-            "model__subsample": [0.7, 0.85, 1.0],
-            "model__colsample_bytree": [0.7, 0.85, 1.0],
+            "model__n_estimators": randint(300, 1201),
+            "model__max_depth": randint(2, 9),
+            "model__learning_rate": loguniform(0.01, 0.2),
+            "model__subsample": uniform(0.7, 0.3),
+            "model__colsample_bytree": uniform(0.7, 0.3),
+            "model__min_child_weight": loguniform(0.5, 20.0),
+            "model__gamma": uniform(0.0, 5.0),
+            "model__reg_alpha": loguniform(1e-4, 10.0),
+            "model__reg_lambda": loguniform(1e-3, 100.0),
         }
     raise ValueError(f"Classifier không được hỗ trợ: {classifier}")

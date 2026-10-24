@@ -16,7 +16,7 @@ from common import CLASSIFIERS, EMBEDDINGS, load_split, make_search
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--csv", type=Path, default=Path("data/embedding_csv/embeddings.csv"))
+    parser.add_argument("--csv", type=Path, default=Path("data/embedding_csv/splits/embeddings_split.csv"))
     parser.add_argument("--output-dir", type=Path, default=Path("embedding_ml/outputs"))
     parser.add_argument("--n-iter", type=int, default=30)
     parser.add_argument("--seed", type=int, default=42)
@@ -39,6 +39,7 @@ def main():
             y_pred,
             labels=labels,
             target_names=[label_names.get(label, str(label)) for label in labels],
+            digits=4,
             zero_division=0,
         )
 
