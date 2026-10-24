@@ -6,8 +6,10 @@ from pathlib import Path
 warnings.filterwarnings("ignore", message=r".*encountered in matmul", category=RuntimeWarning)
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = ROOT / "data" / "vcoco_6class_crops"
-LABELS_CSV = DATA_DIR / "labels.csv"
+# Dữ liệu mặc định. 01_extract_features.py --labels đổi sang file nhãn khác (đường dẫn ảnh tính từ thư mục
+# chứa file nhãn); file đã dùng được ghi vào features/<fXX>/run_info.json để notebook đọc lại đúng dữ liệu.
+LABELS_CSV = ROOT / "data" / "vcoco_6class_crops" / "labels.csv"
+DATA_DIR = LABELS_CSV.parent
 # Mỗi lần chạy ghi vào 1 thư mục phiên bản: features/<version>/, results/<version>/ (xem versioning.py)
 FEAT_ROOT = ROOT / "features"
 RESULT_ROOT = ROOT / "results"

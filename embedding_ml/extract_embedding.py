@@ -166,6 +166,43 @@ def collect_image_records(data_dir: Path) -> Tuple[List[Dict[str, Any]], Dict[st
     return records, label_to_id
 
 
+def collect_csv_records(labels_csv: Path, data_dir: Path) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
+    """Build image records from a split-label CSV whose crop_path is relative to data_dir."""
+    if not labels_csv.is_file():
+        raise FileNotFoundError(f"Không tìm thấy file nhãn: {labels_csv}")
+
+    records: List[Dict[str, Any]] = []
+    with labels_csv.open("r", newline="", encoding="utf-8-sig") as csv_file:
+        reader = csv.DictReader(csv_file)
+        required = {"crop_path", "label", "split"}
+        missing = required.difference(reader.fieldnames or [])
+        if missing:
+            raise ValueError(f"CSV thiếu cột bắt buộc: {', '.join(sorted(missing))}")
+        for row in reader:
+            relative_path = Path(row["crop_path"])
+            image_path = (data_dir / relative_path).resolve()
+            if not image_path.is_file():
+                raise FileNotFoundError(f"Không tìm thấy ảnh từ crop_path: {image_path}")
+            records.append({
+                "stt": len(records) + 1,
+                "image_path": str(image_path),
+                "relative_path": relative_path.as_posix(),
+                "filename": image_path.name,
+                "dataset": row["split"],
+                "label": row["label"],
+            })
+
+    labels = sorted({record["label"] for record in records})
+    label_to_id = {label: idx for idx, label in enumerate(labels)}
+    for record in records:
+        record["label_id"] = label_to_id[record["label"]]
+    if not records:
+        raise RuntimeError(f"Không có ảnh nào trong file nhãn {labels_csv}")
+    print(f"Found {len(records):,} images from {labels_csv}.")
+    print(f"Labels ({len(label_to_id)}): {label_to_id}")
+    return records, label_to_id
+
+
 def build_model_and_transform(
     model_name: str,
     preprocessing: str = "weights",
@@ -396,7 +433,13 @@ def parse_args() -> argparse.Namespace:
         "--data-dir",
         type=Path,
         default=Path("data/dataset_6class_crops_v2"),
-        help="Dataset root with label folders or train/val/test/<label>/ folders.",
+        help="Root directory prepended to crop_path values in --labels-csv.",
+    )
+    parser.add_argument(
+        "--labels-csv",
+        type=Path,
+        default=Path("data/train_test_split/labels_split_unk3000.csv"),
+        help="CSV of selected images, labels and splits.",
     )
     parser.add_argument(
         "--output-dir",
@@ -451,7 +494,7 @@ def main() -> None:
     data_dir = args.data_dir.expanduser().resolve()
     output_dir = args.output_dir.expanduser().resolve()
     device = choose_device(args.device)
-    records, _label_to_id = collect_image_records(data_dir)
+    records, _label_to_id = collect_csv_records(args.labels_csv.expanduser().resolve(), data_dir)
 
     temporary_paths = {}
     for model_name in args.models:
@@ -465,7 +508,7 @@ def main() -> None:
             preprocessing=args.preprocessing,
         )
 
-    output_path = output_dir / "embeddings.csv"
+    output_path = output_dir / "embeddings_v2.csv"
     merge_embedding_csvs(temporary_paths, output_path)
     for path in temporary_paths.values():
         path.unlink(missing_ok=True)
