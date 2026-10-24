@@ -106,12 +106,15 @@ def main():
     frame, label_names = read_embedding_data(args.csv)
 
     results, report = [], [f"Embedding classifier search\nInput: {args.csv}\n"]
+    # Create the report before the expensive searches begin, then checkpoint it
+    # after each embedding/classifier pair so completed work survives interruption.
+    save_results(results, args.output_dir, "\n".join(report))
     for embedding in EMBEDDINGS:
         for classifier in CLASSIFIERS:
             result, details = run_experiment(embedding, classifier, args, frame, label_names, model_dir)
             results.append(result)
             report.append(details)
-    save_results(results, args.output_dir, "\n".join(report))
+            save_results(results, args.output_dir, "\n".join(report))
     print(f"\nMetrics: {args.output_dir / 'metrics.csv'}")
     print(f"Models: {model_dir}")
 

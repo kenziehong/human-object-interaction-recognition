@@ -1,0 +1,72 @@
+Embedding classifier search
+Input: data/embedding_csv/embeddings_v2.csv
+
+
+==============================================================================
+resnet50 + logreg
+Best params: {"model__C": 0.00314288089084011}
+Search validation macro-F1: 0.8427
+[val, model fit on train] accuracy=0.8504, precision_macro=0.8413, recall_macro=0.8441, f1_macro=0.8427, precision_weighted=0.8500, recall_weighted=0.8504, f1_weighted=0.8502
+                  precision    recall  f1-score   support
+
+       eat/drink     0.8218    0.8300    0.8259       200
+            hold     0.7625    0.7526    0.7575       384
+            ride     0.9408    0.9408    0.9408       422
+   talk_on_phone     0.7552    0.7552    0.7552       192
+         unknown     0.8675    0.8618    0.8647       456
+work_on_computer     0.9000    0.9241    0.9119       224
+
+        accuracy                         0.8504      1878
+       macro avg     0.8413    0.8441    0.8427      1878
+    weighted avg     0.8500    0.8504    0.8502      1878
+
+[test, saved model fit on train+val] accuracy=0.8319, precision_macro=0.8216, recall_macro=0.8331, f1_macro=0.8268, precision_weighted=0.8326, recall_weighted=0.8319, f1_weighted=0.8318
+                  precision    recall  f1-score   support
+
+       eat/drink     0.7797    0.8510    0.8138       208
+            hold     0.7332    0.7057    0.7192       401
+            ride     0.9337    0.9409    0.9373       389
+   talk_on_phone     0.7309    0.7581    0.7443       215
+         unknown     0.8935    0.8446    0.8684       457
+work_on_computer     0.8584    0.8981    0.8778       216
+
+        accuracy                         0.8319      1886
+       macro avg     0.8216    0.8331    0.8268      1886
+    weighted avg     0.8326    0.8319    0.8318      1886
+
+Saved model: embedding_ml/outputs/models_v2/resnet50_logreg.joblib
+
+
+==============================================================================
+resnet50 + svm
+Best params: {"model__C": 3.1112010907394807, "model__gamma": 0.00017487448087128617, "model__kernel": "rbf"}
+Search validation macro-F1: 0.8427
+[val, model fit on train] accuracy=0.8482, precision_macro=0.8434, recall_macro=0.8430, f1_macro=0.8427, precision_weighted=0.8482, recall_weighted=0.8482, f1_weighted=0.8479
+                  precision    recall  f1-score   support
+
+       eat/drink     0.8111    0.8800    0.8441       200
+            hold     0.7519    0.7578    0.7549       384
+            ride     0.9274    0.9384    0.9329       422
+   talk_on_phone     0.8000    0.7292    0.7629       192
+         unknown     0.8641    0.8509    0.8575       456
+work_on_computer     0.9058    0.9018    0.9038       224
+
+        accuracy                         0.8482      1878
+       macro avg     0.8434    0.8430    0.8427      1878
+    weighted avg     0.8482    0.8482    0.8479      1878
+
+[test, saved model fit on train+val] accuracy=0.8436, precision_macro=0.8370, recall_macro=0.8427, f1_macro=0.8395, precision_weighted=0.8444, recall_weighted=0.8436, f1_weighted=0.8437
+                  precision    recall  f1-score   support
+
+       eat/drink     0.7807    0.8558    0.8165       208
+            hold     0.7494    0.7382    0.7437       401
+            ride     0.9338    0.9434    0.9386       389
+   talk_on_phone     0.7661    0.7767    0.7714       215
+         unknown     0.8909    0.8578    0.8740       457
+work_on_computer     0.9009    0.8843    0.8925       216
+
+        accuracy                         0.8436      1886
+       macro avg     0.8370    0.8427    0.8395      1886
+    weighted avg     0.8444    0.8436    0.8437      1886
+
+Saved model: embedding_ml/outputs/models_v2/resnet50_svm.joblib

@@ -18,6 +18,7 @@ features/
 results/
 embedding_ml/outputs/models/*
 embedding_ml/outputs/models_v2/*
+embedding_ml/__pycache__/*
 
 # Bí mật
 .env
