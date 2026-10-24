@@ -23,8 +23,8 @@ File **`EXPERIMENTS.md`** ghi (đầy đủ, mọi mục đánh số) **kết qu
    Ghi đúng sự thật: nếu cải thiện đến từ nguyên nhân khác dự kiến, hoặc không cải thiện, cũng phải ghi. Không ghi số chưa đo; số ước tính phải ghi rõ "ước tính".
 3. **Kinh nghiệm rút ra về đặc trưng / mô hình** (cạm bẫy khi train, mẹo tăng tốc mô hình, cách chọn mô hình) → thêm vào `## Bài học kinh nghiệm` trong `EXPERIMENTS.md`. Ghi chú môi trường / cài đặt thì đưa vào mục Cài đặt.
 4. **Việc đề xuất mà chưa làm** → thêm vào `## Cần làm` kèm lý do, để lần sau làm tiếp. Việc đã xong thì đánh dấu `[x]` hoặc chuyển sang Thực nghiệm.
-5. **Thời gian chạy**: mỗi lần chạy, cập nhật mục `## Thời gian chạy` (các file `data/features/<fXX>/timing_extract.csv`, cột thời gian trong `val_results.csv` / `test_results.csv`, `total_wall_s` trong `run_info.json`).
-6. Cập nhật bảng kết quả trong README và chạy lại notebook `code/04_report.ipynb` khi kết quả thay đổi; ghi rõ chạy trên bao nhiêu ảnh.
+5. **Thời gian chạy**: mỗi lần chạy, cập nhật mục `## Thời gian chạy` trong README (chỉ giữ phiên bản mới nhất; thời gian của phiên bản cũ chuyển sang `EXPERIMENTS.md`) (các file `data/features/<fXX>/timing_extract.csv`, cột thời gian trong `val_results.csv` / `test_results.csv`, `total_wall_s` trong `run_info.json`).
+6. **README chỉ giữ kết quả mới nhất** (bảng kết quả, đánh giá từng lớp, thời gian chạy, thực nghiệm): khi có phiên bản mới, chuyển kết quả của phiên bản trước sang `EXPERIMENTS.md`. Cập nhật bảng kết quả trong README và chạy lại notebook `code/04_report.ipynb` khi kết quả thay đổi; ghi rõ chạy trên bao nhiêu ảnh.
 7. **Phiên bản**: mỗi lần chạy tạo phiên bản mới (`data/features/fXX`, `data/results/rXX`, kèm `--note`). Thêm ngay 1 dòng vào bảng `## Phiên bản kết quả` trong README (phiên bản, ngày, số ảnh, nội dung, kết quả chính, số thực nghiệm nếu có, ghi chú), và nhắc số phiên bản trong mục thực nghiệm tương ứng (`EXPERIMENTS.md`).
 
 ## Quy tắc về dữ liệu và đánh giá
