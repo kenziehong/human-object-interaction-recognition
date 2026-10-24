@@ -18,7 +18,7 @@ bằng **đặc trưng thủ công** + **học máy cổ điển**.
 
 - Phối hợp: `fused` (4 cơ bản), `combo_local` (sift_spm + sift_upper + color + geom + skin), `fused_all` (tất cả). Danh sách bộ đặc trưng nằm trong `FEATURE_SETS` ở `code/models.py`: thêm tổ hợp mới chỉ cần thêm 1 dòng.
 - 4 mô hình: **Logistic Regression**, **SVM (RBF)**, **Random Forest**, **XGBoost**. Cân bằng lớp (vì `unknown` chiếm ~65%) bằng `class_weight`; riêng XGBoost dùng `sample_weight`. SVM và XGBoost giảm chiều bằng PCA 256 khi bộ đặc trưng > 1500 chiều.
-- Đánh giá bằng **macro-F1** và **recall từng lớp** (không dùng accuracy). Chọn siêu tham số trên **val**, **test** chỉ dùng để báo cáo.
+- Đánh giá: **macro-F1** (chỉ số chính, dùng để chọn mô hình) và **recall từng lớp**; ngoài ra ghi accuracy, precision, F1 (macro, weighted, từng lớp) và confusion matrix. Accuracy chỉ để tham khảo vì `unknown` chiếm đa số. Chọn siêu tham số trên **val**, **test** chỉ dùng để báo cáo.
 
 Mô tả dữ liệu: [`data/vcoco_6class_crops/README.md`](data/vcoco_6class_crops/README.md).
 
@@ -39,10 +39,12 @@ human-object-interaction-recognition/
 │   ├── features.py              hog, lbp, color, sift-BoVW (+spm, upper), hog_upper, gist, skin, geom
 │   ├── models.py                4 mô hình + lưới siêu tham số + FEATURE_SETS (cách phối)
 │   ├── versioning.py            quản lý phiên bản, chặn ghi đè, ghi run_info.json
+│   ├── resources.py             đo RAM đỉnh, CPU, dung lượng, thông tin máy
+│   ├── clip_feat.py             (tuỳ chọn) embedding ảnh/prompt CLIP ViT-B/32: mốc so sánh, không phải đặc trưng thủ công
 │   ├── 01_extract_features.py   trích đặc trưng -> data/features/<fXX>/
 │   ├── 02_train_select.py       grid search trên val (12 bộ đặc trưng x 4 mô hình) -> data/results/<rXX>/val_results.csv
 │   ├── 03_final_test.py         train lại trên train+val, đánh giá test -> data/results/<rXX>/
-│   └── 04_report.ipynb          báo cáo chính: hiển thị phiên bản mới nhất (hiện là r02)
+│   └── 04_report.ipynb          báo cáo chính: hiển thị phiên bản mới nhất (hiện là r04)
 ├── doc/                         README_paper.md (tóm tắt input, output, metric của DP-HOI); PDF bài báo chỉ để ở máy, không có trên repo
 ├── run_all.sh                   chạy tuần tự bước 1 → 4
 └── requirements.txt
@@ -102,6 +104,8 @@ python3 -m venv .venv
 brew install libomp        # macOS: XGBoost cần OpenMP
 ```
 
+`requirements.txt` có `open_clip_torch` (kéo theo `torch`, `torchvision`, vài trăm MB): **chỉ cần cho khối CLIP**. Ai chỉ chạy đặc trưng thủ công có thể bỏ dòng đó; `torch` chỉ được import khi trích với `--clip`. Lần đầu trích CLIP sẽ tải trọng số ViT-B/32 `openai` (~350 MB) vào cache của Hugging Face.
+
 - Thiếu `libomp` thì XGBoost báo `Library not loaded: libomp.dylib`.
 - Cảnh báo `RuntimeWarning: ... encountered in matmul` là báo nhầm của numpy 2.0 + Accelerate trên macOS (kết quả vẫn đúng); đã tắt trong `config.py`.
 
@@ -125,7 +129,7 @@ LABELS=data/train_test_split/labels_split_unk3000.csv DATA_DIR=data/dataset_6cla
   FEATS="sift hog" MODELS="logreg" bash run_all.sh f02 r02 "ghi chú"
 ```
 
-Biến môi trường tuỳ chọn của `run_all.sh`: `LABELS` (file nhãn có cột `split`), `DATA_DIR` (thư mục ảnh mà `crop_path` tính từ đó; mặc định cạnh file nhãn), `FEATS`, `MODELS` (mặc định: tất cả). `LABELS`/`DATA_DIR` chỉ dùng ở bước 1 và được ghi vào `data/features/<fXX>/run_info.json`, nên notebook tự đọc đúng dữ liệu của từng phiên bản.
+Biến môi trường tuỳ chọn của `run_all.sh`: `LABELS` (file nhãn có cột `split`), `DATA_DIR` (thư mục ảnh mà `crop_path` tính từ đó; mặc định cạnh file nhãn), `FEATS`, `MODELS` (mặc định: mọi bộ đặc trưng có trong phiên bản đặc trưng × mọi mô hình), `CLIP=1` (bước 1 trích thêm khối `clip`). `LABELS`/`DATA_DIR` chỉ dùng ở bước 1 và được ghi vào `data/features/<fXX>/run_info.json`, nên notebook tự đọc đúng dữ liệu của từng phiên bản.
 
 Chỉ chạy lại notebook `04_report.ipynb` thì **không** tạo ra kết quả: notebook chỉ đọc `data/features/` và `data/results/` do bước 1–3 sinh ra. Repo không chứa hai thư mục này, nên lần đầu phải chạy `run_all.sh` (hoặc bước 1 → 3 bên dưới) trước. Với cùng dữ liệu và thư viện trong `requirements.txt`, kết quả tái lập chính xác (đã kiểm tra: đặc trưng giống từng bit, val/test lệch 0).
 
@@ -139,22 +143,31 @@ cd code
 RUN_VERSION=r02 ../.venv/bin/jupyter nbconvert --to notebook --execute --inplace 04_report.ipynb  # báo cáo hiển thị r02
 ```
 
-**Báo cáo kết quả xem ở `code/04_report.ipynb`**: notebook này luôn hiển thị phiên bản mới nhất (hiện là `r02`). Khi có phiên bản mới, sửa giá trị mặc định `VERSION` ở ô đầu rồi Run All (kernel `.venv`). Muốn xem lại phiên bản cũ thì đặt `VERSION` cũ và chạy lại; `data/results/` chỉ chứa kết quả do script sinh ra, không chứa bản sao notebook hay HTML.
+**Báo cáo kết quả xem ở `code/04_report.ipynb`**: notebook này luôn hiển thị phiên bản mới nhất (hiện là `r04`). Khi có phiên bản mới, sửa giá trị mặc định `VERSION` ở ô đầu rồi Run All (kernel `.venv`). Muốn xem lại phiên bản cũ thì đặt `VERSION` cũ và chạy lại; `data/results/` chỉ chứa kết quả do script sinh ra, không chứa bản sao notebook hay HTML.
 
 Tùy chọn:
 - Thử nhanh: `01_extract_features.py --version f_test --limit 60` (lấy khoảng 10 ảnh mỗi lớp mỗi split).
 - Chạy thêm một phần vào phiên bản có sẵn: `02_train_select.py --feat_version f02 --version r02 --update --feats sift color --models svm` (chỉ thay các dòng `--feats × --models`, giữ nguyên các dòng khác). Sau đó chạy `03_final_test.py --version r02 --update`.
 - Đổi tham số đặc trưng trong `config.py`, sau đó chạy bước 1 với **phiên bản mới**.
+- **CLIP (mốc so sánh)**: `01_extract_features.py --clip` trích thêm khối `clip` (embedding ảnh 512 chiều, ảnh crop được đệm thành hình vuông) và `clip_text.npy` (embedding 5 prompt trong `config.CLIP_PROMPTS`). Bộ đặc trưng `clip` chạy được với mọi mô hình (linear probe) và với **`clip_zs`** (zero-shot): softmax(100 × cosine ảnh–prompt) trên 5 lớp hành động, lấy lớp cao nhất; nếu xác suất cao nhất < T thì gán `unknown`. T ∈ {0, 0.5, 0.6, 0.7, 0.8, 0.9} chọn trên val. Ngưỡng này mô phỏng lỏng ngưỡng T chọn Reliable Person Query của DP-HOI (ở bài báo là ngưỡng điểm phát hiện người, ở đây là ngưỡng tin cậy hành động). Kết quả CLIP thuộc nhóm `group = clip`, chọn cấu hình tốt nhất riêng với nhóm đặc trưng thủ công. **Lưu ý dữ liệu**: CLIP train trên ~400 triệu cặp ảnh–văn bản lấy từ web không công bố, không loại trừ được ảnh COCO (có ảnh test V-COCO); chỉ báo cáo như mốc so sánh.
 
 Đầu ra chính (trong `data/results/<rXX>/`, trừ khi ghi khác):
-- `val_results.csv`: macro-F1, balanced accuracy, recall từng lớp, siêu tham số tốt nhất của mọi cấu hình.
-- `test_results.csv`, `test_report.txt`: kết quả test của mô hình tốt nhất cho mỗi bộ đặc trưng và cho mỗi mô hình (cột `is_best_on_val` đánh dấu mô hình tốt nhất trên val).
-- `confusion_<feature>_<model>.png`, `models/*.joblib`, `test_pred_*.npy`.
+- `val_results.csv`: mọi cấu hình, gồm `val_macro_f1`, `val_balanced_acc` (= macro recall), `val_accuracy`, `val_macro_precision`, `val_weighted_f1`, `precision_/recall_/f1_<lớp>`, siêu tham số tốt nhất. Các cột accuracy / precision / F1 từng lớp có từ `r03` (hàm `eval_metrics` trong `models.py`).
+- `test_results.csv`, `test_report.txt`: kết quả test. Từ `r03`, bước 3 **test mọi cấu hình** đã chạy ở bước 2 (`--best_only` để chỉ test cấu hình tốt nhất cho mỗi bộ đặc trưng và mỗi mô hình, như `r01`, `r02`). Cột `group` (`handcrafted` / `clip`) ghi nhóm phương pháp; `is_best_on_val` đánh dấu cấu hình tốt nhất **trên val trong từng nhóm**. Số test của mọi cấu hình chỉ để báo cáo, không dùng để chọn mô hình. Từ `r03`, `test_results.csv` có cùng nhóm cột như val (tiền tố `test_`); phiên bản cũ chỉ có accuracy / precision trong `test_report.txt`, nhưng notebook tự tính lại đủ từ `test_pred_*.npy`.
+- `confusion_<feature>_<model>.png` và `.csv`: ma trận nhầm lẫn trên test dạng **số ảnh** (hàng = nhãn thật, cột = dự đoán), có từ `r03`; `r01`/`r02` chỉ có PNG chuẩn hóa theo hàng, nhưng notebook tự vẽ lại dạng số ảnh từ `test_pred_*.npy`.
+- `models/*.joblib`, `test_pred_*.npy`, `val_pred_*.npy` (dự đoán trên val của mọi cấu hình, để vẽ confusion matrix trên val; có từ `r03`).
+- `grid_<feature>_<model>.csv`: val macro-F1 của **từng** giá trị trong lưới siêu tham số (ví dụ so T = 0.7 và 0.8 của `clip_zs`); có từ `r04`.
 - Thời gian chạy (xem mục [Thời gian chạy](#thời-gian-chạy)):
   - `data/features/<fXX>/timing_extract.csv` (bước 1): `wall_s` (thời gian thực của cả công đoạn, chạy song song), `cpu_s` và `cpu_ms_per_img` (tổng thời gian tính của riêng từng khối đặc trưng).
   - `val_results.csv` (bước 2): `n_grid`, `grid_search_s`, `fit_best_s`, `time_s`.
   - `test_results.csv` (bước 3): `dim`, `fit_s` (train trên train+val), `predict_s`, `predict_ms_per_img`.
   - `run_info.json`: `total_wall_s` của mỗi bước.
+- Tài nguyên (đo bằng `code/resources.py`, có từ `f03` / `r03`):
+  - `run_info.json` mỗi bước: `peak_rss_mb` (RAM đỉnh của cả cây tiến trình, gồm worker joblib), `peak_delta_mb` (phần tăng thêm so với lúc bắt đầu bước), `cpu_s`, `cpu_util` (số nhân dùng trung bình), `machine_info` (RAM máy, số nhân, phiên bản thư viện); bước 1 thêm `disk_mb`, `disk_mb_by_block`; bước 3 thêm `disk_mb`, `models_mb`.
+  - `timing_extract.csv` (bước 1): `stage_peak_rss_mb`, `stage_peak_delta_mb`, `stage_cpu_util` (của cả công đoạn, các khối trong cùng công đoạn có cùng giá trị).
+  - `val_results.csv` (bước 2): `peak_rss_mb`, `peak_delta_mb`, `cpu_s`, `cpu_util`, `X_mb` (ma trận train+val) cho từng cấu hình.
+  - `test_results.csv` (bước 3): `peak_rss_mb`, `peak_delta_mb`, `cpu_util`, `X_mb`, `model_mb` (kích thước `.joblib`).
+  - Cách đọc: `peak_rss_mb` cộng RSS mọi tiến trình nên đếm trùng bộ nhớ dùng chung (cận trên), và gồm cả phần nền của các worker loky đang chờ (mỗi worker ~100–200 MB). `peak_delta_mb` của cấu hình đầu tiên còn gồm RAM khởi động worker. Lấy mẫu mỗi 0.2 s, đỉnh ngắn hơn có thể bị bỏ lỡ.
 
 > Nếu trong `data/` thiếu ảnh so với `labels.csv`, pipeline in cảnh báo và chỉ dùng ảnh đang có.
 
@@ -169,6 +182,7 @@ Tra cứu nhanh: mỗi dòng là một thư mục; chi tiết lệnh và tham s�
 | `f01` | 12/10/2026 | 261 / 42 / 216 | 10 khối: hog, lbp, color, sift, geom, sift_spm, hog_upper, sift_upper, gist, skin | 3 | Tạo bằng `run_all.sh`; có `timing_extract.csv` |
 | `f02` | 24/10/2026 | 9.069 / 1.878 / 1.886 | Bộ gộp 4 nguồn, `labels_split_unk3000.csv`; trích đủ 10 khối như `f01` (r02 chỉ dùng `sift`, `hog`) | 5 | 247 s. `LABELS=data/train_test_split/labels_split_unk3000.csv DATA_DIR=data/dataset_6class_crops` |
 | `f02_interrupted` | 24/10/2026 | 9.069 / 1.878 / 1.886 | Dở dang: chỉ có meta, geom và các khối ảnh (hog, lbp, color, hog_upper, gist, skin); chưa có SIFT, chưa có `run_info.json` | – | Lần chạy `LABELS=…labels_split_unk3000.csv FEATS="sift hog" MODELS=logreg bash run_all.sh f02 r02` bị dừng ở bước 1 để chuyển file split sang `data/train_test_split/`. Log: `run_log.txt`. **Không dùng** |
+| `f03` | 24/10/2026 | 9.069 / 1.878 / 1.886 | Như `f02` + khối `clip` (CLIP ViT-B/32, 512 chiều, ảnh đệm vuông) và `clip_text.npy` (5 prompt); khối thủ công giống từng bit `f02` | 8 | 400.6 s; RAM đỉnh 4.0 GB. `LABELS=data/train_test_split/labels_split_unk3000.csv DATA_DIR=data/dataset_6class_crops CLIP=1` |
 
 **Kết quả (`data/results/`)**
 
@@ -176,131 +190,161 @@ Tra cứu nhanh: mỗi dòng là một thư mục; chi tiết lệnh và tham s�
 |---|---|---|---|---|---|---|---|
 | `r01` | 12/10/2026 | `f01` | 261 / 42 / 216 | 12 bộ đặc trưng × 4 mô hình, test 15 cấu hình, có đo thời gian | val tốt nhất: sift + XGBoost 0.352; test tốt nhất: geom + XGBoost 0.283 | 1–4 | Cấu hình đã gồm mọi thay đổi của thực nghiệm 1–4 |
 | `r02_interrupted` | 24/10/2026 | `f02` | 9.069 / 1.878 / 1.886 | Dở dang: bước 2 chỉ xong sift + LogReg (val 0.4298) | – | – | Bị dừng khi đang chạy hog + LogReg (lỗi `TerminatedWorkerError` trong `run_log.txt` là do dừng tay). **Không dùng** |
-| **`r02`** | 24/10/2026 | `f02` | 9.069 / 1.878 / 1.886 | Bộ gộp, unknown 3000; `sift`, `hog` × LogReg, RF (RF bổ sung bằng `--update`) | val tốt nhất: sift + LogReg 0.430; test: sift + LogReg **0.434**, sift + RF 0.432, hog + LogReg 0.387 | 5, 6 | **Bản mới nhất** (đang hiển thị trong notebook). Bước 3 chạy lại sau khi thêm RF; kết quả LogReg không đổi |
+| `r02` | 24/10/2026 | `f02` | 9.069 / 1.878 / 1.886 | Bộ gộp, unknown 3000; `sift`, `hog` × LogReg, RF (RF bổ sung bằng `--update`) | val tốt nhất: sift + LogReg 0.430; test: sift + LogReg **0.434**, sift + RF 0.432, hog + LogReg 0.387 | 5, 6 | Bước 3 chạy lại sau khi thêm RF; kết quả LogReg không đổi |
+| `r03` | 24/10/2026 | `f02` | 9.069 / 1.878 / 1.886 | `hog`, `lbp`, `color`, `sift` × LogReg, SVM, RF, XGB; test cả 16 cấu hình; đủ chỉ số (accuracy, precision, F1, confusion số ảnh); đo RAM | val tốt nhất: sift + SVM 0.480, test **0.464**; test cao nhất: hog + SVM 0.483 (val 0.445) | 7 | 26 phút 56 s; RAM đỉnh 7.8 GB. Bảng đầy đủ 4 đặc trưng thủ công × 4 mô hình |
+| **`r04`** | 24/10/2026 | `f03` | 9.069 / 1.878 / 1.886 | `clip` × LogReg, SVM, RF, XGB, zero-shot (`clip_zs`, lưới T); `sift` × 4 mô hình làm mốc; test cả 9 cấu hình | nhóm clip: clip + SVM val 0.878, test **0.889**; zero-shot T = 0.6, test 0.581; nhóm thủ công: sift + SVM test 0.464 | 8 | **Bản mới nhất** (đang hiển thị trong notebook). CLIP là mốc so sánh (rủi ro dữ liệu web). 15 phút 37 s cả pipeline |
 
 Các lần chạy trong thực nghiệm 1–4 không lưu lại file; số liệu của chúng chỉ còn trong [`EXPERIMENTS.md`](EXPERIMENTS.md). `r01` tái lập đúng kết quả cuối của thực nghiệm 4.
-Phiên bản tiếp theo nên đặt là `r03` (và `f03` nếu đổi dữ liệu hoặc tham số đặc trưng).
+Phiên bản tiếp theo nên đặt là `r05` (và `f04` nếu đổi dữ liệu, tham số đặc trưng hoặc thêm khối).
 
-## Kết quả `r02` (bộ gộp 4 nguồn, unknown 3000, 24/10/2026)
+## Kết quả `r04` (CLIP so với sift, 24/10/2026)
 
-README chỉ giữ kết quả mới nhất. Kết quả và thời gian chạy của các phiên bản cũ (`r01`, mẫu 519 ảnh) nằm trong [`EXPERIMENTS.md`](EXPERIMENTS.md#kết-quả-chạy-thử-trên-mẫu-nhỏ-r01-thực-nghiệm-14-12102026).
+README chỉ giữ kết quả mới nhất. Kết quả và thời gian chạy của các phiên bản cũ nằm trong [`EXPERIMENTS.md`](EXPERIMENTS.md): **`r03` là bảng đầy đủ của 4 đặc trưng thủ công × 4 mô hình** (hog + SVM cao nhất trên test 0.483), `r02`, `r01`.
 
-Chạy trên **12.833 ảnh** (`data/train_test_split/labels_split_unk3000.csv`: train 9.069, val 1.878, test 1.886), 2 đặc trưng (`sift`, `hog`) × 2 mô hình (LogReg, RF). Biểu đồ đầy đủ trong `code/04_report.ipynb`.
-Test có `unknown` đã giảm (23% thay vì 56%), nên precision các lớp hành động cao hơn so với phân bố thật; macro-F1 vẫn so được giữa các cấu hình trong `r02`, nhưng **không so trực tiếp được với `r01`** (khác dữ liệu, khác test).
+Chạy trên **12.833 ảnh** (`f03` = các khối của `f02` + khối `clip`; khối thủ công của `f03` giống từng bit `f02`), 2 bộ đặc trưng × mô hình, **test cả 9 cấu hình**:
+- **Nhóm `clip`** (mốc so sánh, không phải đặc trưng thủ công): embedding ảnh CLIP ViT-B/32 (512 chiều) × LogReg, SVM, RF, XGB (linear probe / học có giám sát) và `clip_zs` (zero-shot).
+- **Nhóm `handcrafted`**: `sift` × 4 mô hình, đặt cạnh để so (số liệu trùng `r03`).
 
-| Đặc trưng | Mô hình | Siêu tham số tốt nhất | Val macro-F1 | Test macro-F1 | Test balanced acc |
-|---|---|---|---|---|---|
-| sift (500-d) | LogReg | C = 0.01 | **0.430** | **0.434** | **0.451** |
-| sift (500-d) | RF | 300 cây, depth None, leaf 3 | 0.415 | 0.432 | 0.437 |
-| hog (3780-d) | LogReg | C = 0.01 | 0.362 | 0.387 | 0.392 |
-| hog (3780-d) | RF | 300 cây, depth None, leaf 3 | 0.339 | – | – |
+> **Lưu ý dữ liệu**: CLIP được train trên ~400 triệu cặp ảnh–văn bản lấy từ web, không công bố. Không loại trừ được việc dữ liệu đó có ảnh COCO, kể cả ảnh test V-COCO (trong test của `r04`, 1.025/1.886 ảnh là từ v_coco, tức ảnh COCO). Vì vậy kết quả CLIP chỉ là **mốc so sánh**, không thay kết quả chính của đặc trưng thủ công.
 
-hog + RF không chạy test vì không phải cấu hình tốt nhất của đặc trưng `hog` hay của mô hình RF (`03_final_test.py` chỉ test các cấu hình đó).
+Xếp theo nhóm, rồi theo val macro-F1. Cấu hình chọn theo val trong từng nhóm: **clip + SVM** và **sift + SVM**. Accuracy chỉ để tham khảo; macro recall = balanced accuracy. RAM là RAM đỉnh khi grid search ở bước 2 (cận trên, gồm nền worker).
 
-Recall từng lớp trên test:
+| Nhóm | Đặc trưng | Mô hình | Siêu tham số tốt nhất | Val macro-F1 | Test macro-F1 | Test accuracy | Test macro precision | Test macro recall | Test weighted F1 | Bước 2 (s) | RAM bước 2 (MB) | Mô hình (MB) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| clip | **clip** | **SVM** | C = 10, γ = scale | **0.878** | **0.889** | **0.892** | **0.893** | **0.885** | **0.892** | 46.9 | 3.942 | 23.90 |
+| clip | clip | XGB | lr 0.1, depth 4, 600 cây | 0.870 | 0.882 | 0.885 | 0.887 | 0.879 | 0.886 | 102.1 | 4.864 | 5.68 |
+| clip | clip | LogReg | C = 0.01 | 0.870 | 0.876 | 0.880 | 0.872 | 0.881 | 0.880 | 3.5 | 1.441 | 0.04 |
+| clip | clip | RF | 300 cây, depth None, leaf 3 | 0.847 | 0.833 | 0.836 | 0.865 | 0.820 | 0.839 | 99.0 | 4.295 | 69.21 |
+| clip | clip | **zero-shot** | T = 0.6 | 0.605 | 0.581 | 0.547 | 0.651 | 0.615 | 0.508 | 0.3 | 4.255 | 0.01 |
+| handcrafted | **sift** | **SVM** | C = 1, γ = scale | 0.480 | 0.464 | 0.488 | 0.460 | 0.478 | 0.484 | 109.5 | 4.507 | 41.45 |
+| handcrafted | sift | XGB | lr 0.1, depth 6, 300 cây | 0.449 | 0.447 | 0.477 | 0.448 | 0.452 | 0.472 | 58.5 | 4.746 | 5.50 |
+| handcrafted | sift | LogReg | C = 0.01 | 0.430 | 0.434 | 0.457 | 0.432 | 0.451 | 0.455 | 0.8 | 4.525 | 0.04 |
+| handcrafted | sift | RF | 300 cây, depth None, leaf 3 | 0.415 | 0.432 | 0.468 | 0.455 | 0.437 | 0.456 | 32.6 | 4.617 | 114.64 |
 
-| Cấu hình | hold | ride | eat/drink | talk_on_phone | work_on_computer | unknown |
+**Zero-shot: macro-F1 trên val theo ngưỡng T** (`data/results/r04/grid_clip_clip_zs.csv`; xác suất softmax cao nhất < T → `unknown`):
+
+| T | 0 (không gán unknown) | 0.5 | **0.6** | 0.7 | 0.8 | 0.9 |
 |---|---|---|---|---|---|---|
-| sift + LogReg | 0.237 | 0.645 | **0.370** | **0.367** | **0.569** | 0.519 |
-| sift + RF | **0.322** | **0.666** | 0.197 | 0.293 | 0.551 | **0.595** |
-| hog + LogReg | 0.287 | 0.563 | 0.284 | 0.321 | 0.403 | 0.495 |
+| Val macro-F1 | 0.562 | 0.603 | **0.605** | 0.604 | 0.599 | 0.595 |
+
+Hai giá trị tham khảo T = 0.7 (0.604) và T = 0.8 (0.599) gần như ngang T = 0.6 (0.605): đường cong rất phẳng từ 0.5 đến 0.9; chỉ việc **có** ngưỡng (so với T = 0) là tăng rõ (+0.04).
 
 Nhận xét:
-- **Val khớp test**: chênh lệch val–test ≤ 0.03 ở cả 2 cấu hình (với `r01`, val 42 ảnh, có chênh tới 0.18). Val 1.878 ảnh đủ để chọn mô hình.
-- **sift tốt hơn hog ở 5/6 lớp**; hog chỉ hơn ở `hold` (0.287 so với 0.237).
-- `hold` là lớp khó nhất (recall 0.24–0.29): "cầm vật" trông giống `unknown` và các lớp có cầm vật khác (`eat/drink`, `talk_on_phone`). `ride` dễ nhất (0.56–0.65).
-- C tốt nhất là **0.01, giá trị nhỏ nhất của lưới** ở cả 2 đặc trưng: có thể C nhỏ hơn còn tốt hơn (xem Cần làm).
-- **RF ngang LogReg về macro-F1 trên sift** (test 0.432 so với 0.434) nhưng thiên về lớp lớn: recall `hold`, `ride`, `unknown` cao hơn, còn `eat/drink` (0.197) và `talk_on_phone` (0.293) thấp hơn hẳn, dù đã dùng `class_weight="balanced_subsample"`. Trên hog, RF lệch mạnh hơn nữa (val: recall `talk_on_phone` 0.073, `eat/drink` 0.110).
-- RF tốn hơn nhiều: hog + RF mất 237.5 s ở bước 2, so với 14.6 s của hog + LogReg.
+- **Linear probe CLIP vượt xa đặc trưng thủ công**: clip + SVM test 0.889 so với 0.464 của sift + SVM (gần gấp đôi), và cả 4 mô hình trên clip đều ≥ 0.83. Ngay LogReg trên clip (0.876) đã hơn mọi cấu hình thủ công. Đây là mức trần tham khảo, kèm rủi ro dữ liệu ở trên.
+- **Zero-shot kém hơn nhiều so với có giám sát** (test 0.581 so với 0.889) nhưng vẫn hơn mọi cấu hình thủ công (0.464) mà **không dùng nhãn nào để học** (chỉ chọn T trên val).
+- **Mô hình trên clip xếp hạng như trên sift**: SVM > XGB ≈ LogReg > RF; SVM thắng với C = 10 (biên lưới).
+- **Val khớp test** ở mọi cấu hình clip (chênh ≤ 0.024).
 
-### Đánh giá từng lớp (test, `r02`)
+### Đánh giá từng lớp (test, `r04`)
 
-Tính từ `data/results/r02/test_pred_*.npy` và `data/features/f02/y_test.npy` (cùng số với `test_report.txt` và `confusion_*.png`). P = precision, R = recall.
+P = precision, R = recall. Đầy đủ 9 cấu hình trong notebook mục 4.
 
-| Lớp (số ảnh test) | sift + LogReg P / R / F1 | sift + RF P / R / F1 | hog + LogReg P / R / F1 |
+| Lớp (số ảnh test) | clip + SVM P / R / F1 | clip zero-shot P / R / F1 | sift + SVM P / R / F1 |
 |---|---|---|---|
-| hold (401) | 0.378 / 0.237 / 0.291 | 0.362 / **0.322** / **0.341** | 0.346 / 0.287 / 0.314 |
-| ride (389) | **0.606** / 0.645 / **0.625** | 0.515 / **0.666** / 0.581 | 0.578 / 0.563 / 0.570 |
-| eat/drink (208) | 0.284 / **0.370** / **0.322** | 0.281 / 0.197 / 0.232 | 0.233 / 0.284 / 0.256 |
-| talk_on_phone (215) | 0.304 / **0.367** / 0.333 | **0.600** / 0.293 / **0.394** | 0.265 / 0.321 / 0.291 |
-| work_on_computer (216) | 0.395 / **0.569** / 0.467 | **0.408** / 0.551 / **0.469** | 0.345 / 0.403 / 0.372 |
-| unknown (457) | **0.625** / 0.519 / 0.567 | 0.562 / **0.595** / **0.578** | 0.551 / 0.495 / 0.521 |
-| **macro** | **0.432 / 0.451 / 0.434** | 0.455 / 0.437 / 0.432 | 0.386 / 0.392 / 0.387 |
+| hold (401) | 0.798 / 0.848 / 0.822 | 0.690 / **0.100** / 0.174 | 0.390 / 0.274 / 0.322 |
+| ride (389) | 0.984 / 0.972 / 0.978 | 0.519 / 0.905 / 0.660 | 0.601 / 0.674 / 0.635 |
+| eat/drink (208) | 0.849 / 0.837 / 0.843 | 0.632 / 0.885 / 0.737 | 0.295 / 0.361 / 0.325 |
+| talk_on_phone (215) | 0.893 / 0.814 / 0.852 | 0.865 / 0.656 / 0.746 | 0.404 / 0.391 / 0.397 |
+| work_on_computer (216) | 0.935 / 0.940 / 0.938 | 0.939 / 0.861 / 0.899 | 0.429 / 0.597 / 0.499 |
+| unknown (457) | 0.900 / 0.902 / 0.901 | 0.259 / 0.282 / **0.270** | 0.642 / 0.569 / 0.603 |
+| **macro** | **0.893 / 0.885 / 0.889** | 0.651 / 0.615 / 0.581 | 0.460 / 0.478 / 0.464 |
+| accuracy | **0.892** | 0.547 | 0.488 |
 
-Ma trận nhầm lẫn của **sift + LogReg** (cấu hình tốt nhất trên val; hàng = nhãn thật, cột = dự đoán):
+Ma trận nhầm lẫn (số ảnh; hàng = nhãn thật, cột = dự đoán) của **clip zero-shot** (T = 0.6):
 
 | Thật \ Dự đoán | hold | ride | eat/drink | talk_on_phone | work_on_computer | unknown |
 |---|---|---|---|---|---|---|
-| hold | **95** | 45 | 93 | 66 | 60 | 42 |
-| ride | 23 | **251** | 22 | 27 | 19 | 47 |
-| eat/drink | 26 | 14 | **77** | 31 | 49 | 11 |
-| talk_on_phone | 40 | 15 | 36 | **79** | 23 | 22 |
-| work_on_computer | 18 | 10 | 26 | 19 | **123** | 20 |
-| unknown | 49 | 79 | 17 | 38 | 37 | **237** |
+| hold | **40** | 22 | 78 | 18 | 9 | 234 |
+| ride | 0 | **352** | 0 | 0 | 0 | 37 |
+| eat/drink | 2 | 0 | **184** | 2 | 0 | 20 |
+| talk_on_phone | 3 | 4 | 11 | **141** | 1 | 55 |
+| work_on_computer | 1 | 1 | 4 | 1 | **186** | 23 |
+| unknown | 12 | 299 | 14 | 1 | 2 | **129** |
+
+và của **clip + SVM**:
+
+| Thật \ Dự đoán | hold | ride | eat/drink | talk_on_phone | work_on_computer | unknown |
+|---|---|---|---|---|---|---|
+| hold | **340** | 2 | 17 | 13 | 7 | 22 |
+| ride | 5 | **378** | 0 | 0 | 0 | 6 |
+| eat/drink | 28 | 0 | **174** | 2 | 3 | 1 |
+| talk_on_phone | 17 | 2 | 6 | **175** | 1 | 14 |
+| work_on_computer | 6 | 0 | 4 | 0 | **203** | 3 |
+| unknown | 30 | 2 | 4 | 6 | 3 | **412** |
 
 Nhận xét theo lớp:
-- **Phần lớn lỗi là nhầm giữa 4 lớp "tay cầm vật"** (`hold`, `eat/drink`, `talk_on_phone`, `work_on_computer`): 487/1.024 lỗi (48%) của sift + LogReg nằm trong nhóm này. Đặc trưng toàn ảnh (BoVW không giữ vị trí, HOG trên cả crop) thấy "có tay, có vật nhỏ" nhưng không phân biệt được vật gì và vật ở đâu so với đầu/tay.
-- **`hold` khó nhất** (F1 0.29–0.34) và bị nhầm **ra mọi phía**: với sift + LogReg, 93 ảnh (23%) thành `eat/drink`, 66 (16%) thành `talk_on_phone`, 60 (15%) thành `work_on_computer`. Theo định nghĩa lớp, `hold` là "cầm vật nhưng không làm 3 hành động kia", nên về hình ảnh nó gần như bao trùm 3 lớp đó. Vì `hold` bị dự đoán thành các lớp này nhiều, precision của `eat/drink` (0.28) và `talk_on_phone` (0.30) thấp.
-- **`eat/drink` hay bị nhầm thành `work_on_computer`** (49/208 = 24%). Giả thuyết (chưa kiểm chứng bằng ảnh): ăn uống thường ở bàn, cùng bối cảnh với ngồi trước máy tính.
-- **`ride` ↔ `unknown`** là cặp nhầm lớn thứ 2: 79 ảnh `unknown` (17%) bị đoán là `ride`, 47 ảnh `ride` bị đoán là `unknown`. Giả thuyết (chưa kiểm chứng): người đứng cạnh xe đạp, ngựa, hoặc ở cảnh đường phố có bối cảnh giống `ride`.
-- **`work_on_computer` tốt thứ 2** sau `ride` (recall 0.57): laptop/bàn phím có kết cấu đặc trưng, SIFT bắt tốt.
-- **RF và LogReg đánh đổi precision/recall khác nhau**: RF có precision `talk_on_phone` cao (0.60) nhưng recall thấp (0.29), tức RF chỉ đoán `talk_on_phone` khi rất chắc. Ma trận nhầm lẫn của RF có nhiều ảnh bị đẩy về `ride` và `unknown` hơn (ví dụ `hold` → `ride` 83, `hold` → `unknown` 71), khớp với nhận xét RF thiên về lớp lớn.
+- **Zero-shot mạnh ở lớp có vật / hành động rõ** (`work_on_computer` F1 0.899, `talk_on_phone` 0.746, `eat/drink` 0.737) và **hỏng ở 2 lớp "định nghĩa bằng phủ định"**:
+  - `unknown` không có prompt riêng: **299/457 ảnh `unknown` (65%) bị đoán là `ride`**. Prompt "a person riding" trở thành lựa chọn mặc định cho người đứng ngoài trời, cạnh xe; softmax giữa 5 prompt luôn chọn 1 lớp, nên ngưỡng T không lọc được các ảnh này (xác suất `ride` vẫn cao).
+  - `hold`: **234/401 ảnh (58%) bị gán `unknown`** và 78 thành `eat/drink`. "holding something" quá mơ hồ nên xác suất bị chia đều, rơi dưới ngưỡng.
+- **Linear probe sửa đúng 2 lớp đó**: `hold` recall 0.848, `unknown` 0.902. Nhãn giám sát cho mô hình học được ranh giới "cầm vật nhưng không làm 3 hành động kia" mà prompt văn bản không diễn đạt được.
+- Lỗi còn lại của clip + SVM vẫn tập trung ở nhóm "tay cầm vật" (104/204 lỗi, 51%), chủ yếu `eat/drink` → `hold` (28) và `talk_on_phone` → `hold` (17), nhưng số lỗi tuyệt đối giảm từ 966 (sift + SVM) xuống 204.
 
 ## Thời gian chạy
 
-Máy: Apple Silicon (arm64), 10 CPU (4 nhân hiệu năng cao + 6 nhân tiết kiệm điện), RAM 24 GB, `n_jobs=-1`. Chỉ ghi phiên bản mới nhất; thời gian `f01` / `r01` xem [`EXPERIMENTS.md`](EXPERIMENTS.md#thời-gian-chạy-f01--r01-mẫu-519-ảnh-12102026).
+Máy: Apple Silicon (arm64), 10 CPU (4 nhân hiệu năng cao + 6 nhân tiết kiệm điện), RAM 24 GB, `n_jobs=-1`. Chỉ ghi phiên bản mới nhất; thời gian `f02` / `r03`, `r02` và `f01` / `r01` xem [`EXPERIMENTS.md`](EXPERIMENTS.md).
 
-### `f02` / `r02` (12.833 ảnh, 24/10/2026)
+### `f03` (bước 1, 12.833 ảnh, 24/10/2026)
 
-**Bước 1** (`f02`, 10 khối, `data/features/f02/timing_extract.csv`): tổng thời gian thực **247.2 s**.
+**Bước 1** (`f03`, 10 khối thủ công + `clip`, `--clip`): tổng thời gian thực **400.6 s (6.7 phút)**; RAM đỉnh **4.008 MB** (tăng thêm 3.833 MB), CPU 2.660 s (6.6 nhân trung bình); đĩa 585.6 MB.
 
 | Công đoạn | Thời gian thực (s) |
 |---|---|
-| Lấy mẫu descriptor + KMeans K=500 (chỉ train) | 83.6 |
-| Dense SIFT + BoVW (cả 3 split) | 130.5 |
-| Đặc trưng ảnh hog/lbp/color/hog_upper/gist/skin (cả 3 split) | 32.2 |
+| Lấy mẫu descriptor + KMeans K=500 (chỉ train) | 77.1 |
+| Dense SIFT + BoVW (cả 3 split) | 137.3 |
+| Đặc trưng ảnh hog/lbp/color/hog_upper/gist/skin (cả 3 split) | 29.3 |
 | geom | 0.2 |
+| **CLIP ViT-B/32** (cả 3 split, CPU, 8 luồng torch) | **151.7** (train 106.9, val 22.0, test 22.8) |
 
-- CPU theo khối (cả 12.833 ảnh): sift_descriptor 842 s (65.6 ms/ảnh), bovw_encode 392 s, gist 136 s, lbp 82 s, hog 28 s (2.2 ms/ảnh).
-- So với ước tính trước khi chạy (2–4 phút): thực tế 4 phút 7 s, vượt mức trên. Dense SIFT tốn ~66 ms/ảnh và bovw_encode ~31 ms/ảnh, gấp ~3.5 và ~11 lần `f01` (18.3 và 2.8 ms). **Nguyên nhân chưa xác định.** Không phải do kích thước crop: `sift_desc_pos` luôn resize về cạnh dài 256 px nên số điểm SIFT gần như không đổi. Giả thuyết (chưa kiểm chứng): `cpu_ms_per_img` đo bằng `perf_counter` trong từng tiến trình con, nên khi 10 tiến trình chạy lâu trên 4 nhân nhanh + 6 nhân chậm, cộng với `kmeans.predict` có thể tự mở thêm luồng trong mỗi tiến trình (oversubscription), thời gian mỗi ảnh bị đội lên; `f01` chỉ có 519 ảnh nên ít tranh chấp hơn.
-- Các khối `r02` không dùng (lbp, color, gist, skin, hog_upper, geom) chỉ tốn ~25–30 s thời gian thực; KMeans và SIFT chiếm ~87% bước 1.
+- CLIP: ~85 ảnh/giây (9.069 ảnh train trong 107 s), RAM đỉnh công đoạn 3.9 GB, 2.2 nhân trung bình. Khối `clip` 26.3 MB trên đĩa (512 chiều float32). Lần đầu tải trọng số ~350 MB từ Hugging Face (thời gian tải nằm trong 151.7 s, không tách riêng).
+- So với ước tính trước khi chạy (thủ công ~4 phút + CLIP 3.5–5 phút): thực tế 6.7 phút, CLIP nhanh hơn ước tính (2.5 phút). Ước tính CLIP dựa trên lần chạy thử 60 ảnh, gồm cả thời gian nạp mô hình nên tốc độ bị đánh giá thấp.
+- Khối thủ công của `f03` **giống từng bit** `f02` (đã so `sift`, `hog` trên test): pipeline tái lập được.
 
-**Bước 2** (`r02`, 2 cấu hình × 4 giá trị C): tổng **16.3 s**. sift + LogReg: grid 1.5 s, fit lại 0.13 s; hog + LogReg: grid 11.6 s, fit lại 2.9 s.
+### `r04` (bước 2–4 trên `f03`, 24/10/2026)
 
-**Bước 3** (2 cấu hình): tổng **4.4 s**. Fit trên train+val: sift 0.15 s, hog 3.9 s; dự đoán ≤ 0.03 ms/ảnh.
+Lệnh: `LABELS=... DATA_DIR=... CLIP=1 FEATS="clip sift" MODELS="logreg svm rf xgb clip_zs" bash run_all.sh f03 r04 "..."`. Cả pipeline (bước 1–4) **15 phút 37 s** (23:11:29 → 23:27:06), so với ước tính 18–24 phút.
 
-**Bước 2–4 bằng `run_all.sh`** (dùng lại `f02`, đo bằng `time`): **1 phút 14 s**; notebook khoảng 53 s (ước tính = 74 s trừ bước 2–3, gồm cả RF tính importance trên sift + hog).
+| Bước | Thời gian thực | RAM đỉnh (MB) | RAM tăng thêm (MB) | CPU (s) | Số nhân dùng trung bình |
+|---|---|---|---|---|---|
+| 2. Chọn mô hình (9 cấu hình) | **453.3 s (7.6 phút)** | 4.864 | 4.715 | 2.770 | 6.1 |
+| 3. Test (9 cấu hình, fit trên train+val) | 62.8 s | 865 | 690 | 272 | 4.3 |
+| 4. Notebook | ~20 s (ước tính = tổng − bước 1–3) | – | – | – | – |
 
-**Bổ sung RF vào `r02`** (`02_train_select.py --update --feats sift hog --models rf`, rồi `03_final_test.py --update` và notebook; đo bằng `time`): **5 phút 24 s**.
-- Bước 2: **262.1 s**. sift + RF: grid 22.8 s + fit lại 1.7 s; hog + RF: grid **216.5 s** + fit lại 20.9 s.
-- Bước 3 (3 cấu hình: sift + LogReg, hog + LogReg, sift + RF): 7.0 s; fit sift + RF trên train+val 2.3 s.
-- Notebook khoảng 55 s (ước tính = 324 s trừ bước 2–3).
-- So với ước tính trước khi chạy (5–7 phút; hog + RF grid 2.5–4.5 phút): khớp. Ước tính dựa trên đo 20 cây trên 1 nhân (sift ~0.03 s/cây, hog ~0.28 s/cây).
+- **Bước 2 theo cấu hình**: clip + XGB 102.1 s, clip + RF 99.0 s, clip + SVM 46.9 s, clip + LogReg 3.5 s, **clip zero-shot 0.3 s** (6 giá trị T, không train); sift: SVM 109.5 s, XGB 58.5 s, RF 32.6 s, LogReg 0.8 s (sát `r03`).
+- clip + SVM nhanh hơn sift + SVM (46.9 s so với 109.5 s) dù cùng ~500 chiều: dữ liệu CLIP tách lớp dễ hơn nên SVM hội tụ nhanh hơn, ít support vector hơn (mô hình 23.9 MB so với 41.5 MB).
+- RAM đỉnh bước 2 thấp hơn `r03` (4.9 GB so với 7.8 GB) vì không có hog (3.780 chiều).
+- Dung lượng `data/results/r04/` 261 MB, gần hết là mô hình (RF sift 114.6 MB, RF clip 69.2 MB).
 
 ## Thực nghiệm
 
-Chỉ ghi **thực nghiệm mới nhất**. Toàn bộ nhật ký (mục 1–6), kết luận tạm và [bài học kinh nghiệm](EXPERIMENTS.md#bài-học-kinh-nghiệm) nằm trong [`EXPERIMENTS.md`](EXPERIMENTS.md).
+Chỉ ghi **thực nghiệm mới nhất**. Toàn bộ nhật ký (mục 1–8), kết luận tạm và [bài học kinh nghiệm](EXPERIMENTS.md#bài-học-kinh-nghiệm) nằm trong [`EXPERIMENTS.md`](EXPERIMENTS.md).
 
-6. **Thêm Random Forest vào `r02`** (24/10/2026)
-   - Vấn đề / lý do: người làm đồ án muốn so LogReg với một mô hình phi tuyến trên cùng đặc trưng `sift`, `hog` của `f02`. Ước tính trước khi chạy: 5–7 phút, chủ yếu là hog + RF.
-   - Thay đổi: bổ sung RF vào `r02` bằng `--update` (người làm đồ án đồng ý). Lưới RF giữ nguyên như `r01`: `n_estimators` {300, 500}, `max_depth` {None, 30}, `min_samples_leaf` {1, 3}, `class_weight="balanced_subsample"`.
-   - Kết quả:
-     - sift + RF: val 0.415, test **0.432** (sift + LogReg: val 0.430, test 0.434).
-     - hog + RF: val 0.339 (hog + LogReg: 0.362); không chạy test.
-     - Cả 2 đặc trưng chọn cùng cấu hình: 300 cây, `max_depth=None`, `min_samples_leaf=3`.
-     - Thời gian bước 2: sift + RF 24.5 s, hog + RF 237.5 s (LogReg: 1.7 s và 14.6 s).
+8. **CLIP ViT-B/32: zero-shot với ngưỡng T và linear probe (mốc so sánh)** (24/10/2026)
+   - Vấn đề / lý do: ở `r03`, 46% lỗi của cấu hình tốt nhất là nhầm giữa 4 lớp "tay cầm vật": đặc trưng thủ công thấy có tay, có vật nhỏ nhưng không biết vật gì. CLIP mã hoá ngữ nghĩa vật / hành động. Người làm đồ án đề xuất zero-shot theo ý tưởng ngưỡng T chọn Reliable Person Query của DP-HOI, với T tham khảo 0.7 và 0.8.
+   - Thay đổi:
+     - Khối đặc trưng `clip` (`code/clip_feat.py`, `01_extract_features.py --clip`): embedding ảnh CLIP ViT-B/32 `openai`, 512 chiều, chuẩn hoá L2; ảnh crop được **đệm thành hình vuông** (tiền xử lý mặc định cắt giữa sẽ mất đầu/chân).
+     - Mô hình `clip_zs` (`models.ClipZeroShot`): 5 prompt "a photo of a person {holding something / riding / eating or drinking / talking on the phone / using a computer}"; xác suất = softmax(100 × cosine); lớp cao nhất, nếu xác suất cao nhất < T thì `unknown`. **T đặt trên xác suất softmax** (cosine thô của CLIP chỉ ~0.2–0.3 nên T = 0.7/0.8 không có nghĩa với cosine). Lưới T ∈ {0, 0.5, 0.6, 0.7, 0.8, 0.9}, chọn trên val.
+     - Linear probe: `clip` × LogReg, SVM, RF, XGB như các đặc trưng khác. Kết quả CLIP thuộc nhóm `clip`, chọn tốt nhất riêng với nhóm thủ công.
+     - Lưu điểm val của từng giá trị trong lưới (`grid_*.csv`).
+   - Kết quả (`f03`, `r04`):
+     - Zero-shot: val chọn **T = 0.6** (0.605); T = 0.7: 0.604, T = 0.8: 0.599, không ngưỡng: 0.562. Test **0.581** (accuracy 0.547).
+     - Linear probe: **clip + SVM** val 0.878, test **0.889** (accuracy 0.892); clip + LogReg test 0.876.
+     - So với đặc trưng thủ công tốt nhất theo val (sift + SVM, test 0.464): zero-shot +0.117, linear probe +0.425.
+     - Thời gian: trích CLIP 151.7 s cho 12.833 ảnh trên CPU; cả pipeline 15 phút 37 s.
    - Nhận xét / tác dụng phụ:
-     - RF **không hơn** LogReg về macro-F1, mà tốn gấp 14–16 lần thời gian ở bước 2.
-     - RF đổi kiểu lỗi: tăng recall `hold` (0.237 → 0.322), `ride`, `unknown`, nhưng giảm mạnh `eat/drink` (0.370 → 0.197) và `talk_on_phone` (0.367 → 0.293) trên test. Hai mô hình sai ở các lớp khác nhau, nên late fusion LogReg + RF có thể có ích (chưa thử).
-     - `min_samples_leaf=3` thắng 1 ở cả 2 đặc trưng: lá lớn hơn (ít khớp quá mức) tốt hơn.
-   - Phiên bản: `r02` (cập nhật bằng `--update`; `run_info.json` ghi cả 2 lần chạy bước 2 và 3).
+     - **Ngưỡng T có ích nhưng không nhạy**: có ngưỡng tăng val 0.562 → 0.605; mọi T từ 0.5 đến 0.9 cho 0.595–0.605. Hai giá trị tham khảo 0.7 và 0.8 không hơn 0.6.
+     - **Zero-shot hỏng ở 2 lớp định nghĩa bằng phủ định**: 65% ảnh `unknown` bị đoán là `ride` (không có prompt cho `unknown`, softmax luôn chọn 1 trong 5 lớp); 58% ảnh `hold` bị gán `unknown` ("holding something" quá mơ hồ). Lớp có vật rõ thì tốt (`work_on_computer` F1 0.899).
+     - Linear probe giải quyết đúng 2 lớp đó (`hold` recall 0.848, `unknown` 0.902): cần nhãn để học ranh giới "cầm vật nhưng không làm 3 hành động kia".
+     - So sánh với DP-HOI chỉ là mô phỏng lỏng: ở bài báo T = 0.9 là ngưỡng điểm phát hiện người để chọn RPQ, ở đây T là ngưỡng tin cậy hành động.
+     - **Rủi ro dữ liệu**: CLIP train trên dữ liệu web không công bố, có thể chứa ảnh COCO (gồm ảnh test V-COCO). Kết quả CLIP chỉ là mốc so sánh, không thay kết quả chính của đặc trưng thủ công.
+   - Phiên bản: `f03` (f02 + khối `clip`), `r04`.
 
 ## Cần làm
 
 **Trạng thái hiện tại (để tiếp tục lần sau):**
 - `.venv` đã cài đủ thư viện, `libomp` đã cài.
 - `data/features/f02/` có đủ 10 khối đặc trưng cho bộ gộp (12.833 ảnh, `labels_split_unk3000.csv`). **Không cần chạy lại bước 1** khi chỉ đổi mô hình hoặc lưới: chạy `02_train_select.py --feat_version f02 --version r03 ...`.
-- `data/results/r02/` là **kết quả mới nhất** (sift, hog × LogReg, RF); notebook đang hiển thị `r02`.
+- `data/features/f03/` = `f02` + khối `clip`. `data/results/r04/` là **kết quả mới nhất** (clip × 5 mô hình + sift × 4); notebook đang hiển thị `r04`. Bảng đầy đủ đặc trưng thủ công là `r03`.
+- `torch` + `open_clip_torch` đã cài trong `.venv` (chỉ thêm gói mới, numpy/sklearn/xgboost giữ nguyên phiên bản).
 - `data/features/f01/`, `data/results/r01/` là bản cũ trên 519 ảnh V-COCO, giữ để tham khảo.
 
 Việc bắt buộc, làm trước:
@@ -313,11 +357,19 @@ Việc bắt buộc, làm trước:
 - [x] Thêm phần "Thời gian chạy" vào `04_report.ipynb` (mục 5).
 - [ ] Sau khi có đủ dữ liệu: cập nhật các bảng kết quả, bảng thời gian và nhận xét trong README; viết lại phần "Nhận xét gợi ý" (mục 7) trong notebook theo kết quả thật. Notebook đã chạy với `r02`, nhưng các ô chữ (markdown) vẫn là nhận xét của `r01`.
 
-Cải thiện tiếp từ `r02`:
-- [ ] **Mở rộng lưới C của LogReg về phía nhỏ** (thêm 0.001, 0.003): ở `r02`, C = 0.01 là giá trị nhỏ nhất của lưới và thắng ở cả sift và hog. Rẻ: bước 2 chỉ ~16 s.
-- [ ] Cải thiện lớp `hold` (recall test 0.24–0.29 với LogReg, thấp nhất). Đã xem confusion (mục Đánh giá từng lớp): `hold` bị nhầm đều sang `eat/drink`, `talk_on_phone`, `work_on_computer`, và 48% lỗi nằm trong 4 lớp "tay cầm vật". Hướng thử: đặc trưng giữ vị trí vật so với đầu/tay (SIFT spatial pyramid, `upper` thân trên) thay cho BoVW toàn ảnh. Lý do: lỗi đến từ việc không phân biệt được vật ở đâu, không phải do thiếu dữ liệu.
+Cải thiện tiếp từ `r03`:
+- [x] **Chạy CLIP (`f03`, `r04`)** (xong, thực nghiệm 8): linear probe clip + SVM test 0.889, zero-shot 0.581.
+- [ ] **Zero-shot: thêm prompt cho `unknown`** (ví dụ "a photo of a person standing", "a photo of a person walking") và **prompt ensembling** (nhiều câu mỗi lớp, lấy trung bình embedding). Lý do: 65% ảnh `unknown` bị đoán `ride` vì không có prompt `unknown`; ngưỡng T không sửa được. Rẻ: chỉ cần tính lại `clip_text.npy`, không cần trích lại ảnh.
+- [ ] **Ghép CLIP với đặc trưng thủ công** (nối `clip + hog`, hoặc late fusion clip + SVM với hog + SVM): đặc trưng thủ công có bổ sung gì cho CLIP không? Đây là câu hỏi duy nhất còn ý nghĩa cho phần thủ công khi đặt cạnh CLIP.
+- [ ] **Kiểm tra rủi ro CLIP đã thấy ảnh test**: so kết quả clip + SVM theo nguồn ảnh test (v_coco/COCO so với stanford40, pascal_voc, hico_det). Nếu v_coco cao bất thường so với nguồn khác thì có dấu hiệu lộ dữ liệu.
+- [x] **Đo RAM**: bước 2–3 đã đo ở `r03` (đỉnh 7.8 GB ở hog + RF). Còn thiếu RAM bước 1: sẽ có khi trích `f03`.
+- [ ] **Tách nguồn RAM của bước 2** (nền worker, bản sao ma trận, cây RF, cache kernel SVM) trước khi chạy bộ phối lớn (`fused_all` ~9.300 chiều): RAM đỉnh `r03` 7.8 GB với hog 3.780 chiều.
+- [x] **Chạy `r03` để có đủ chỉ số trong csv** (xong, thực nghiệm 7): code đã ghi accuracy, precision, F1 từng lớp (val và test) và confusion matrix số đếm (`confusion_*.csv`), nhưng chưa chạy. Có thể gộp vào lần chạy `r03` kế tiếp (ví dụ mở rộng lưới C bên dưới). Notebook đã sửa (tính đủ chỉ số và vẽ confusion số đếm cho mọi cấu hình đã test, chạy được cả với `r01`/`r02`) nhưng output đang lưu vẫn là bản cũ; Run All khi có `r03`.
+- [ ] **Mở rộng lưới ở biên**: LogReg C về phía nhỏ (0.001, 0.003; C = 0.01 nhỏ nhất thắng ở hog, color, sift), SVM C về phía lớn (30, 100; C = 10 thắng ở hog), XGBoost thêm 1.000 cây (600 thắng ở 3/4 đặc trưng). LogReg rẻ (~20 s); SVM, XGB thêm vài phút mỗi đặc trưng (ước tính).
+- [ ] **Ghép hog + sift cho SVM** (nối đặc trưng, PCA 256 vì > 1.500 chiều) hoặc **late fusion hog + SVM và sift + SVM**: ở `r03`, hog + SVM mạnh ở `hold`, `ride` (dáng người), sift + SVM mạnh ở `talk_on_phone`, `work_on_computer` (vật). Chọn trọng số trên val.
+- [ ] Cải thiện lớp `hold` (recall test 0.24–0.29 với LogReg ở `r02`; 0.274 với sift + SVM, 0.466 với hog + SVM ở `r03`). Đã xem confusion (mục Đánh giá từng lớp): `hold` bị nhầm đều sang `eat/drink`, `talk_on_phone`, `work_on_computer`, và 48% lỗi nằm trong 4 lớp "tay cầm vật". Hướng thử: đặc trưng giữ vị trí vật so với đầu/tay (SIFT spatial pyramid, `upper` thân trên) thay cho BoVW toàn ảnh. Lý do: lỗi đến từ việc không phân biệt được vật ở đâu, không phải do thiếu dữ liệu.
 - [ ] Xem bằng mắt các ảnh `eat/drink` → `work_on_computer` và `unknown` → `ride` để kiểm chứng giả thuyết "do bối cảnh" (bàn ăn/bàn làm việc, người đứng cạnh xe).
-- [ ] **Late fusion sift + LogReg và sift + RF** (trung bình xác suất): 2 mô hình có macro-F1 gần bằng nhau (0.434 / 0.432) nhưng mạnh ở các lớp khác nhau (LogReg: `eat/drink`, `talk_on_phone`; RF: `hold`, `ride`, `unknown`). Chọn trọng số trên val. Rẻ: cả 2 mô hình đã lưu trong `data/results/r02/models/`, nhưng các model đó train trên train+val, nên chọn trọng số phải fit lại trên train.
+- [ ] ~~Late fusion sift + LogReg và sift + RF~~: thay bằng late fusion hog + SVM và sift + SVM ở trên (RF kém hơn SVM ở `r03`).
 
 Cải thiện mô hình và đặc trưng (chưa làm):
 - [ ] **Fisher Vector / VLAD** thay cho BoVW để mã hoá SIFT mạnh hơn.

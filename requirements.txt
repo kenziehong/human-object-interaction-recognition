@@ -11,3 +11,6 @@ ipykernel
 nbconvert
 xgboost
 pypdf
+psutil
+# Tuỳ chọn: chỉ cần cho khối CLIP (01_extract_features.py --clip / CLIP=1 bash run_all.sh), kéo theo torch, torchvision
+open_clip_torch

@@ -10,6 +10,7 @@ import sys
 from datetime import datetime
 
 import config as C
+from resources import machine_info
 
 _VALID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*(\.[A-Za-z0-9_-]+)*$")   # không cho "..", "/"
 
@@ -43,7 +44,8 @@ def write_run_info(path, step, args, **extra):
     info = json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
     entry = {"time": datetime.now().isoformat(timespec="seconds"),
              "command": " ".join([sys.argv[0].split("/")[-1], *sys.argv[1:]]),
-             "args": vars(args), "machine": f"{platform.machine()} {platform.platform()}", **extra}
+             "args": vars(args), "machine": f"{platform.machine()} {platform.platform()}",
+             "machine_info": machine_info(), **extra}
     info.setdefault(step, []).append(entry)
     f.write_text(json.dumps(info, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
 

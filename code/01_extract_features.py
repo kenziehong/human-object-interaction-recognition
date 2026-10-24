@@ -4,6 +4,7 @@ Chạy:  python 01_extract_features.py --version f01            (ghi vào data/f
        python 01_extract_features.py --version f_test --limit 60 (thử nhanh)
        python 01_extract_features.py --version f02 --labels data/train_test_split/labels_split_unk3000.csv \
               --data_dir data/dataset_6class_crops
+       thêm --clip để trích cả khối CLIP (cần torch + open_clip_torch; mốc so sánh, xem clip_feat.py)
 Không ghi đè phiên bản đã có.
 """
 import argparse
@@ -19,6 +20,7 @@ from joblib import Parallel, delayed
 from sklearn.cluster import MiniBatchKMeans
 
 import config as C
+import resources as R
 from data_utils import load_labels, read_image, set_labels_csv
 import versioning as V
 from features import SIMPLE_EXTRACTORS, bovw_all, geom_feat, sift_desc_pos, sift_descriptors
@@ -90,6 +92,7 @@ def main():
     ap.add_argument("--labels", default=None,
                     help="file nhãn có cột split (tương đối với thư mục gốc repo); mặc định config.LABELS_CSV")
     ap.add_argument("--data_dir", default=None, help="thư mục ảnh mà crop_path tính từ đó; mặc định cạnh --labels")
+    ap.add_argument("--clip", action="store_true", help="trích thêm khối clip (embedding ảnh CLIP) và clip_text.npy")
     args = ap.parse_args()
     if args.labels:
         set_labels_csv(args.labels, args.data_dir)
@@ -100,12 +103,18 @@ def main():
     res_dir = out_dir           # thời gian trích đặc trưng lưu cùng phiên bản đặc trưng
     par = Parallel(n_jobs=args.n_jobs, verbose=0)
     t_start = time.time()
+    mon = R.ResourceMonitor().start()
+    m_all = mon.mark()
     timing = []   # wall_s = thời gian thực của cả bước (song song); cpu_s = tổng thời gian tính của riêng khối đó
 
-    def log_time(stage, split, block, n, wall_s, cpu_s):
+    def log_time(stage, split, block, n, wall_s, cpu_s, res=None):
+        # res = tài nguyên của cả công đoạn (mọi khối của công đoạn đó có cùng giá trị):
+        # stage_peak_rss_mb = RAM đỉnh cả cây tiến trình, stage_cpu_util = số nhân dùng trung bình
         timing.append({"stage": stage, "split": split, "block": block, "n_images": n,
                        "wall_s": round(wall_s, 2), "cpu_s": round(cpu_s, 2),
-                       "cpu_ms_per_img": round(1000 * cpu_s / max(n, 1), 2)})
+                       "cpu_ms_per_img": round(1000 * cpu_s / max(n, 1), 2),
+                       "stage_peak_rss_mb": res and res["peak_rss_mb"], "stage_peak_delta_mb": res and res["peak_delta_mb"],
+                       "stage_cpu_util": res and res["cpu_util"]})
 
     dfs = {}
     for split in C.SPLITS:
@@ -121,15 +130,17 @@ def main():
 
     # Hình học từ bbox (không cần đọc ảnh)
     for split, df in dfs.items():
+        m = mon.mark()
         t = time.perf_counter()
         X = np.stack([geom_feat(r) for _, r in df.iterrows()])
         dt = time.perf_counter() - t
-        log_time("extract", split, "geom", len(df), dt, dt)
+        log_time("extract", split, "geom", len(df), dt, dt, mon.since(m))
         np.save(out_dir / f"{split}_geom.npy", X)
         print(f"[{split}] geom  {X.shape}")
 
     # Các đặc trưng tính trực tiếp từ ảnh: HOG, LBP, Color, HOG thân trên, GIST, Skin
     for split, df in dfs.items():
+        m = mon.mark()
         t = time.time()
         parts = par(delayed(_simple_chunk)(c) for c in _chunks(df["path"].tolist(), 64))
         wall = time.time() - t
@@ -137,11 +148,13 @@ def main():
             X = np.concatenate([p[0][k] for p in parts])
             np.save(out_dir / f"{split}_{k}.npy", X)
             print(f"[{split}] {k:5s} {X.shape}")
+        res = mon.since(m)
         for k, v in _sum_secs(parts).items():
-            log_time("extract_image (hog/lbp/color/hog_upper/gist/skin)", split, k, len(df), wall, v)
+            log_time("extract_image (hog/lbp/color/hog_upper/gist/skin)", split, k, len(df), wall, v, res)
         print(f"[{split}] đặc trưng ảnh xong trong {wall:.0f}s")
 
     # SIFT BoVW: codebook chỉ học trên train
+    m = mon.mark()
     t = time.time()
     train_paths = dfs["train"]["path"].tolist()
     per_img = int(np.ceil(C.BOVW_SAMPLE / len(train_paths)))
@@ -153,10 +166,11 @@ def main():
     kmeans = MiniBatchKMeans(n_clusters=k, batch_size=4096, n_init=3, random_state=C.SEED).fit(D)
     joblib.dump(kmeans, out_dir / "sift_kmeans.joblib")
     log_time("sift_codebook (lấy mẫu descriptor + KMeans)", "train", f"kmeans_K{k}", len(train_paths),
-             time.time() - t, time.time() - t)
+             time.time() - t, time.time() - t, mon.since(m))
     print(f"KMeans K={k} xong trong {time.time() - t:.0f}s")
 
     for split, df in dfs.items():
+        m = mon.mark()
         t = time.time()
         parts = par(delayed(_bovw_chunk)(c, kmeans) for c in _chunks(df["path"].tolist(), 64))
         wall = time.time() - t
@@ -164,14 +178,29 @@ def main():
             X = np.concatenate([p[0][k] for p in parts])
             np.save(out_dir / f"{split}_{k}.npy", X)
             print(f"[{split}] {k:10s} {X.shape}")
+        res = mon.since(m)
         for k, v in _sum_secs(parts).items():
-            log_time("sift_bovw (sift/sift_spm/sift_upper)", split, k, len(df), wall, v)
+            log_time("sift_bovw (sift/sift_spm/sift_upper)", split, k, len(df), wall, v, res)
         print(f"[{split}] BoVW xong trong {wall:.0f}s")
+
+    # CLIP: embedding ảnh (không học gì từ dữ liệu) + embedding prompt cho zero-shot; chạy tuần tự trên CPU
+    feats = C.ATOMIC_FEATURES + (C.CLIP_FEATURES if args.clip else [])
+    if args.clip:
+        import clip_feat
+        np.save(out_dir / "clip_text.npy", clip_feat.text_embeddings())
+        for split, df in dfs.items():
+            m = mon.mark()
+            t = time.time()
+            X = clip_feat.image_embeddings(df["path"].tolist())
+            wall = time.time() - t
+            np.save(out_dir / f"{split}_clip.npy", X)
+            log_time(f"clip ({C.CLIP_MODEL} {C.CLIP_PRETRAINED})", split, "clip", len(df), wall, wall, mon.since(m))
+            print(f"[{split}] clip {X.shape} trong {wall:.0f}s")
 
     # Kiểm tra
     for split in C.SPLITS:
         n = len(dfs[split])
-        for f in C.ATOMIC_FEATURES:
+        for f in feats:
             X = np.load(out_dir / f"{split}_{f}.npy")
             assert len(X) == n and np.isfinite(X).all(), (split, f)
     print("OK: đủ số dòng, không NaN/Inf ->", out_dir)
@@ -180,9 +209,16 @@ def main():
     tdf["machine"] = f"{platform.machine()} {os.cpu_count()} CPU, n_jobs={args.n_jobs}"
     tdf.to_csv(res_dir / "timing_extract.csv", index=False)
     print(f"Thời gian trích đặc trưng -> {res_dir / 'timing_extract.csv'}")
+    res = mon.since(m_all)
+    mon.stop()
+    disk = {f: round(sum(R.file_mb(out_dir / f"{s}_{f}.npy") for s in C.SPLITS), 1) for f in feats}
     V.write_run_info(out_dir, "01_extract_features", args, note=args.note, labels_csv=labels_csv, data_dir=data_dir,
                      n_images={s: len(d) for s, d in dfs.items()}, total_wall_s=round(time.time() - t_start, 1),
+                     peak_rss_mb=res["peak_rss_mb"], peak_delta_mb=res["peak_delta_mb"], cpu_s=res["cpu_s"], cpu_util=res["cpu_util"],
+                     disk_mb=R.dir_mb(out_dir), disk_mb_by_block=disk, blocks=feats,
                      feature_config=V.feature_config())
+    print(f"RAM đỉnh {res['peak_rss_mb']} MB, CPU {res['cpu_s']} s ({res['cpu_util']} nhân), "
+          f"đĩa {R.dir_mb(out_dir)} MB")
     print(tdf.groupby("block")[["cpu_s"]].sum().assign(
         cpu_ms_per_img=lambda d: (1000 * d.cpu_s / sum(len(v) for v in dfs.values())).round(2)).to_string())
 

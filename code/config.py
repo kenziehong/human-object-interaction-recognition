@@ -54,5 +54,20 @@ SKIN_CR = (133, 173)
 SKIN_CB = (77, 127)
 SKIN_GRID = 4
 
+# CLIP (mốc so sánh, không phải đặc trưng thủ công; chỉ trích khi 01_extract_features.py --clip, xem clip_feat.py)
+CLIP_FEATURES = ["clip"]
+CLIP_MODEL, CLIP_PRETRAINED = "ViT-B-32", "openai"
+CLIP_PAD_RGB = (122, 116, 104)  # màu đệm ảnh thành hình vuông = trung bình chuẩn hoá của CLIP × 255
+CLIP_THREADS = 8
+# 1 prompt cho mỗi lớp hành động; unknown không có prompt (gán khi xác suất cao nhất < ngưỡng T)
+CLIP_PROMPTS = {
+    "hold": "a photo of a person holding something",
+    "ride": "a photo of a person riding",
+    "eat/drink": "a photo of a person eating or drinking",
+    "talk_on_phone": "a photo of a person talking on the phone",
+    "work_on_computer": "a photo of a person using a computer",
+}
+CLIP_LOGIT_SCALE = 100.0        # nhiệt độ softmax của CLIP (logit = 100 × cosine)
+
 MIN_SIDE = 32                 # lọc crop quá nhỏ ở train (tùy chọn)
 SEED = 42

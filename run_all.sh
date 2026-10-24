@@ -7,6 +7,7 @@
 #   LABELS=data/train_test_split/labels_split_unk3000.csv       file nhãn (mặc định trong config.py)
 #   DATA_DIR=data/dataset_6class_crops                          thư mục ảnh (mặc định: cạnh file nhãn)
 #   FEATS="sift hog"  MODELS="logreg"                            chỉ chạy một phần (mặc định: tất cả)
+#   CLIP=1                                                       bước 1 trích thêm khối clip (cần torch, open_clip_torch)
 # Script dừng nếu phiên bản đã tồn tại (không ghi đè kết quả cũ).
 set -euo pipefail
 
@@ -17,6 +18,7 @@ LABELS=${LABELS:-}
 DATA_DIR=${DATA_DIR:-}
 FEATS=${FEATS:-}
 MODELS=${MODELS:-}
+CLIP=${CLIP:-}
 
 cd "$(dirname "$0")/code"
 PY=../.venv/bin/python
@@ -26,7 +28,7 @@ echo "== Bước 1: trích đặc trưng -> data/features/$FEAT"
 if [ -e "../data/features/$FEAT/y_train.npy" ]; then
   echo "   data/features/$FEAT đã có, dùng lại"
 else
-  $PY 01_extract_features.py --version "$FEAT" --note "$NOTE" ${LABELS:+--labels "$LABELS"} ${DATA_DIR:+--data_dir "$DATA_DIR"}
+  $PY 01_extract_features.py --version "$FEAT" --note "$NOTE" ${LABELS:+--labels "$LABELS"} ${DATA_DIR:+--data_dir "$DATA_DIR"} ${CLIP:+--clip}
 fi
 
 echo "== Bước 2: chọn mô hình trên val -> data/results/$RES"
