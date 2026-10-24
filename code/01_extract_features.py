@@ -1,6 +1,6 @@
-"""Bước 1-2: trích đặc trưng (4 cơ bản + bổ sung) cho train/val/test, cache vào features/.
+"""Bước 1-2: trích đặc trưng (4 cơ bản + bổ sung) cho train/val/test, cache vào data/features/.
 
-Chạy:  python 01_extract_features.py --version f01            (ghi vào features/f01/)
+Chạy:  python 01_extract_features.py --version f01            (ghi vào data/features/f01/)
        python 01_extract_features.py --version f_test --limit 60 (thử nhanh)
        python 01_extract_features.py --version f02 --labels data/train_test_split/labels_split_unk3000.csv \
               --data_dir data/dataset_6class_crops
@@ -83,7 +83,7 @@ def _sum_secs(parts):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--version", required=True, help="tên phiên bản đặc trưng, ví dụ f01 -> features/f01/")
+    ap.add_argument("--version", required=True, help="tên phiên bản đặc trưng, ví dụ f01 -> data/features/f01/")
     ap.add_argument("--note", default="", help="mô tả ngắn phiên bản (ghi vào run_info.json)")
     ap.add_argument("--limit", type=int, default=None, help="chỉ lấy N ảnh mỗi split (thử nhanh)")
     ap.add_argument("--n_jobs", type=int, default=-1)

@@ -1,4 +1,4 @@
-"""Quản lý phiên bản kết quả: features/<version>/ và results/<version>/.
+"""Quản lý phiên bản kết quả: data/features/<version>/ và data/results/<version>/.
 
 Quy tắc: không bao giờ xoá hay ghi đè một phiên bản đã có. Muốn bổ sung vào phiên bản cũ
 (ví dụ chạy thêm vài cấu hình) thì phải truyền --update một cách chủ động.

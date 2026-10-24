@@ -23,8 +23,8 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--feat_version", required=True, help="phiên bản đặc trưng trong features/")
-    ap.add_argument("--version", required=True, help="phiên bản kết quả -> results/<version>/")
+    ap.add_argument("--feat_version", required=True, help="phiên bản đặc trưng trong data/features/")
+    ap.add_argument("--version", required=True, help="phiên bản kết quả -> data/results/<version>/")
     ap.add_argument("--note", default="", help="mô tả ngắn lần chạy")
     ap.add_argument("--update", action="store_true",
                     help="cho phép bổ sung vào phiên bản đã có (chỉ thay các dòng --feats x --models)")

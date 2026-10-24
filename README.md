@@ -22,7 +22,7 @@ bằng **đặc trưng thủ công** + **học máy cổ điển**.
 
 Mô tả dữ liệu: [`data/vcoco_6class_crops/README.md`](data/vcoco_6class_crops/README.md).
 
-> **Repo không chứa ảnh, đặc trưng hay kết quả** (`data/`, `features/`, `results/` nằm trong `.gitignore`; trong `data/` chỉ đưa lên file mô tả dữ liệu và các file split trong `data/train_test_split/`). Dữ liệu là ảnh crop người cắt từ [V-COCO](https://github.com/s-gupta/v-coco) (ảnh COCO 2014), cách tạo ghi trong README dữ liệu. Đặt dữ liệu vào `data/vcoco_6class_crops/` theo đúng cấu trúc trong đó (`train/val/test/<lớp>/*.jpg` + `labels.csv`). Các số liệu và phiên bản `fXX` / `rXX` nhắc tới bên dưới là kết quả chạy trên máy của người làm đồ án; biểu đồ và bảng vẫn xem được trong output của `code/04_report.ipynb`.
+> **Repo không chứa ảnh, đặc trưng hay kết quả** (`data/`, gồm cả `data/features/` và `data/results/`, nằm trong `.gitignore`; trong `data/` chỉ đưa lên file mô tả dữ liệu và các file split trong `data/train_test_split/`). Dữ liệu là ảnh crop người cắt từ [V-COCO](https://github.com/s-gupta/v-coco) (ảnh COCO 2014), cách tạo ghi trong README dữ liệu. Đặt dữ liệu vào `data/vcoco_6class_crops/` theo đúng cấu trúc trong đó (`train/val/test/<lớp>/*.jpg` + `labels.csv`). Các số liệu và phiên bản `fXX` / `rXX` nhắc tới bên dưới là kết quả chạy trên máy của người làm đồ án; biểu đồ và bảng vẫn xem được trong output của `code/04_report.ipynb`.
 
 ## Cấu trúc
 
@@ -31,24 +31,24 @@ human-object-interaction-recognition/
 ├── data/vcoco_6class_crops/     dữ liệu crop (train/val/test/<lớp>/*.jpg + labels.csv)
 ├── data/dataset_6class_crops/   bộ gộp 4 nguồn (<lớp>/*.jpg + labels.csv + labels_ignore.csv), không có cột split
 ├── data/train_test_split/       file nhãn đã chia split của bộ gộp (labels_split.csv, labels_split_unk3000.csv)
+├── data/features/<fXX>/         (tự sinh) đặc trưng .npy, nhãn, codebook SIFT, timing_extract.csv, run_info.json
+├── data/results/<rXX>/          (tự sinh) kết quả val/test, confusion matrix, mô hình .joblib, run_info.json
 ├── code/
 │   ├── config.py                đường dẫn, danh sách lớp, tham số đặc trưng
 │   ├── data_utils.py            đọc labels.csv, đọc ảnh (bỏ qua ảnh không có trên đĩa)
 │   ├── features.py              hog, lbp, color, sift-BoVW (+spm, upper), hog_upper, gist, skin, geom
 │   ├── models.py                4 mô hình + lưới siêu tham số + FEATURE_SETS (cách phối)
 │   ├── versioning.py            quản lý phiên bản, chặn ghi đè, ghi run_info.json
-│   ├── 01_extract_features.py   trích đặc trưng -> features/<fXX>/
-│   ├── 02_train_select.py       grid search trên val (12 bộ đặc trưng x 4 mô hình) -> results/<rXX>/val_results.csv
-│   ├── 03_final_test.py         train lại trên train+val, đánh giá test -> results/<rXX>/
+│   ├── 01_extract_features.py   trích đặc trưng -> data/features/<fXX>/
+│   ├── 02_train_select.py       grid search trên val (12 bộ đặc trưng x 4 mô hình) -> data/results/<rXX>/val_results.csv
+│   ├── 03_final_test.py         train lại trên train+val, đánh giá test -> data/results/<rXX>/
 │   └── 04_report.ipynb          báo cáo chính: hiển thị phiên bản mới nhất (hiện là r01)
-├── features/<fXX>/              (tự sinh) đặc trưng .npy, nhãn, codebook SIFT, timing_extract.csv, run_info.json
-├── results/<rXX>/               (tự sinh) kết quả val/test, confusion matrix, mô hình .joblib, run_info.json
 ├── doc/                         README_paper.md (tóm tắt input, output, metric của DP-HOI); PDF bài báo chỉ để ở máy, không có trên repo
 ├── run_all.sh                   chạy tuần tự bước 1 → 4
 └── requirements.txt
 ```
 
-`features/` và `results/` do script sinh ra, không có trên repo.
+`data/features/` và `data/results/` do script sinh ra, không có trên repo.
 
 ## Dữ liệu
 
@@ -108,8 +108,8 @@ brew install libomp        # macOS: XGBoost cần OpenMP
 ## Cách chạy
 
 Mọi kết quả được lưu theo **phiên bản**, không bao giờ ghi đè hay xoá kết quả cũ:
-- `features/<fXX>/`: một bộ đặc trưng (đổi tham số đặc trưng hoặc thêm ảnh → phiên bản `f` mới).
-- `results/<rXX>/`: một lần chọn mô hình + test, dùng một phiên bản đặc trưng (ghi trong `run_info.json`).
+- `data/features/<fXX>/`: một bộ đặc trưng (đổi tham số đặc trưng hoặc thêm ảnh → phiên bản `f` mới).
+- `data/results/<rXX>/`: một lần chọn mô hình + test, dùng một phiên bản đặc trưng (ghi trong `run_info.json`).
 - Script **dừng lại** nếu phiên bản đã tồn tại. Muốn bổ sung vào phiên bản cũ phải truyền `--update` một cách chủ động.
 - Mỗi phiên bản có `run_info.json`: thời gian, lệnh đã chạy, tham số, ghi chú (`--note`), số ảnh, cấu hình đặc trưng, lưới siêu tham số.
 - **Mỗi phiên bản mới phải được thêm vào bảng [Phiên bản kết quả](#phiên-bản-kết-quả).**
@@ -117,17 +117,17 @@ Mọi kết quả được lưu theo **phiên bản**, không bao giờ ghi đè
 **Chạy toàn bộ bằng 1 lệnh** (ở thư mục gốc repo, khoảng 2 phút trên 519 ảnh):
 
 ```bash
-bash run_all.sh                          # tạo features/f01 + results/r01, rồi chạy notebook
-bash run_all.sh f02 r02 "ghi chú"        # phiên bản khác; nếu features/f02 đã có thì dùng lại
+bash run_all.sh                          # tạo data/features/f01 + data/results/r01, rồi chạy notebook
+bash run_all.sh f02 r02 "ghi chú"        # phiên bản khác; nếu data/features/f02 đã có thì dùng lại
 
 # Bộ gộp 4 nguồn (file split ở data/train_test_split/, ảnh ở data/dataset_6class_crops/), chỉ chạy một phần:
 LABELS=data/train_test_split/labels_split_unk3000.csv DATA_DIR=data/dataset_6class_crops \
   FEATS="sift hog" MODELS="logreg" bash run_all.sh f02 r02 "ghi chú"
 ```
 
-Biến môi trường tuỳ chọn của `run_all.sh`: `LABELS` (file nhãn có cột `split`), `DATA_DIR` (thư mục ảnh mà `crop_path` tính từ đó; mặc định cạnh file nhãn), `FEATS`, `MODELS` (mặc định: tất cả). `LABELS`/`DATA_DIR` chỉ dùng ở bước 1 và được ghi vào `features/<fXX>/run_info.json`, nên notebook tự đọc đúng dữ liệu của từng phiên bản.
+Biến môi trường tuỳ chọn của `run_all.sh`: `LABELS` (file nhãn có cột `split`), `DATA_DIR` (thư mục ảnh mà `crop_path` tính từ đó; mặc định cạnh file nhãn), `FEATS`, `MODELS` (mặc định: tất cả). `LABELS`/`DATA_DIR` chỉ dùng ở bước 1 và được ghi vào `data/features/<fXX>/run_info.json`, nên notebook tự đọc đúng dữ liệu của từng phiên bản.
 
-Chỉ chạy lại notebook `04_report.ipynb` thì **không** tạo ra kết quả: notebook chỉ đọc `features/` và `results/` do bước 1–3 sinh ra. Repo không chứa hai thư mục này, nên lần đầu phải chạy `run_all.sh` (hoặc bước 1 → 3 bên dưới) trước. Với cùng dữ liệu và thư viện trong `requirements.txt`, kết quả tái lập chính xác (đã kiểm tra: đặc trưng giống từng bit, val/test lệch 0).
+Chỉ chạy lại notebook `04_report.ipynb` thì **không** tạo ra kết quả: notebook chỉ đọc `data/features/` và `data/results/` do bước 1–3 sinh ra. Repo không chứa hai thư mục này, nên lần đầu phải chạy `run_all.sh` (hoặc bước 1 → 3 bên dưới) trước. Với cùng dữ liệu và thư viện trong `requirements.txt`, kết quả tái lập chính xác (đã kiểm tra: đặc trưng giống từng bit, val/test lệch 0).
 
 Hoặc chạy từng bước trong thư mục `code/` (ví dụ tạo `f02` và `r02`):
 
@@ -139,19 +139,19 @@ cd code
 RUN_VERSION=r02 ../.venv/bin/jupyter nbconvert --to notebook --execute --inplace 04_report.ipynb  # báo cáo hiển thị r02
 ```
 
-**Báo cáo kết quả xem ở `code/04_report.ipynb`**: notebook này luôn hiển thị phiên bản mới nhất (hiện là `r02`). Khi có phiên bản mới, sửa giá trị mặc định `VERSION` ở ô đầu rồi Run All (kernel `.venv`). Muốn xem lại phiên bản cũ thì đặt `VERSION` cũ và chạy lại; `results/` chỉ chứa kết quả do script sinh ra, không chứa bản sao notebook hay HTML.
+**Báo cáo kết quả xem ở `code/04_report.ipynb`**: notebook này luôn hiển thị phiên bản mới nhất (hiện là `r02`). Khi có phiên bản mới, sửa giá trị mặc định `VERSION` ở ô đầu rồi Run All (kernel `.venv`). Muốn xem lại phiên bản cũ thì đặt `VERSION` cũ và chạy lại; `data/results/` chỉ chứa kết quả do script sinh ra, không chứa bản sao notebook hay HTML.
 
 Tùy chọn:
 - Thử nhanh: `01_extract_features.py --version f_test --limit 60` (lấy khoảng 10 ảnh mỗi lớp mỗi split).
 - Chạy thêm một phần vào phiên bản có sẵn: `02_train_select.py --feat_version f02 --version r02 --update --feats sift color --models svm` (chỉ thay các dòng `--feats × --models`, giữ nguyên các dòng khác). Sau đó chạy `03_final_test.py --version r02 --update`.
 - Đổi tham số đặc trưng trong `config.py`, sau đó chạy bước 1 với **phiên bản mới**.
 
-Đầu ra chính (trong `results/<rXX>/`, trừ khi ghi khác):
+Đầu ra chính (trong `data/results/<rXX>/`, trừ khi ghi khác):
 - `val_results.csv`: macro-F1, balanced accuracy, recall từng lớp, siêu tham số tốt nhất của mọi cấu hình.
 - `test_results.csv`, `test_report.txt`: kết quả test của mô hình tốt nhất cho mỗi bộ đặc trưng và cho mỗi mô hình (cột `is_best_on_val` đánh dấu mô hình tốt nhất trên val).
 - `confusion_<feature>_<model>.png`, `models/*.joblib`, `test_pred_*.npy`.
 - Thời gian chạy (xem mục [Thời gian chạy](#thời-gian-chạy)):
-  - `features/<fXX>/timing_extract.csv` (bước 1): `wall_s` (thời gian thực của cả công đoạn, chạy song song), `cpu_s` và `cpu_ms_per_img` (tổng thời gian tính của riêng từng khối đặc trưng).
+  - `data/features/<fXX>/timing_extract.csv` (bước 1): `wall_s` (thời gian thực của cả công đoạn, chạy song song), `cpu_s` và `cpu_ms_per_img` (tổng thời gian tính của riêng từng khối đặc trưng).
   - `val_results.csv` (bước 2): `n_grid`, `grid_search_s`, `fit_best_s`, `time_s`.
   - `test_results.csv` (bước 3): `dim`, `fit_s` (train trên train+val), `predict_s`, `predict_ms_per_img`.
   - `run_info.json`: `total_wall_s` của mỗi bước.
@@ -160,9 +160,9 @@ Tùy chọn:
 
 ## Phiên bản kết quả
 
-Tra cứu nhanh: mỗi dòng là một thư mục; chi tiết lệnh và tham số nằm trong `run_info.json` của thư mục đó. Cột "Thực nghiệm" trỏ tới mục tương ứng trong [Thực nghiệm](#thực-nghiệm).
+Tra cứu nhanh: mỗi dòng là một thư mục; chi tiết lệnh và tham số nằm trong `run_info.json` của thư mục đó. Từ 24/10/2026, `features/` và `results/` được chuyển vào `data/features/` và `data/results/` (chỉ đổi chỗ, nội dung giữ nguyên). Cột "Thực nghiệm" trỏ tới mục tương ứng trong [`EXPERIMENTS.md`](EXPERIMENTS.md).
 
-**Đặc trưng (`features/`)**
+**Đặc trưng (`data/features/`)**
 
 | Phiên bản | Ngày | Số ảnh (train/val/test) | Nội dung | Thực nghiệm | Ghi chú |
 |---|---|---|---|---|---|
@@ -170,7 +170,7 @@ Tra cứu nhanh: mỗi dòng là một thư mục; chi tiết lệnh và tham s�
 | `f02` | 24/10/2026 | 9.069 / 1.878 / 1.886 | Bộ gộp 4 nguồn, `labels_split_unk3000.csv`; trích đủ 10 khối như `f01` (r02 chỉ dùng `sift`, `hog`) | 5 | 247 s. `LABELS=data/train_test_split/labels_split_unk3000.csv DATA_DIR=data/dataset_6class_crops` |
 | `f02_interrupted` | 24/10/2026 | 9.069 / 1.878 / 1.886 | Dở dang: chỉ có meta, geom và các khối ảnh (hog, lbp, color, hog_upper, gist, skin); chưa có SIFT, chưa có `run_info.json` | – | Lần chạy `LABELS=…labels_split_unk3000.csv FEATS="sift hog" MODELS=logreg bash run_all.sh f02 r02` bị dừng ở bước 1 để chuyển file split sang `data/train_test_split/`. Log: `run_log.txt`. **Không dùng** |
 
-**Kết quả (`results/`)**
+**Kết quả (`data/results/`)**
 
 | Phiên bản | Ngày | Đặc trưng | Số ảnh (train/val/test) | Nội dung | Kết quả chính | Thực nghiệm | Ghi chú |
 |---|---|---|---|---|---|---|---|
@@ -178,7 +178,7 @@ Tra cứu nhanh: mỗi dòng là một thư mục; chi tiết lệnh và tham s�
 | `r02_interrupted` | 24/10/2026 | `f02` | 9.069 / 1.878 / 1.886 | Dở dang: bước 2 chỉ xong sift + LogReg (val 0.4298) | – | – | Bị dừng khi đang chạy hog + LogReg (lỗi `TerminatedWorkerError` trong `run_log.txt` là do dừng tay). **Không dùng** |
 | **`r02`** | 24/10/2026 | `f02` | 9.069 / 1.878 / 1.886 | Bộ gộp, unknown 3000; `sift`, `hog` × LogReg, RF (RF bổ sung bằng `--update`) | val tốt nhất: sift + LogReg 0.430; test: sift + LogReg **0.434**, sift + RF 0.432, hog + LogReg 0.387 | 5, 6 | **Bản mới nhất** (đang hiển thị trong notebook). Bước 3 chạy lại sau khi thêm RF; kết quả LogReg không đổi |
 
-Các lần chạy trong thực nghiệm 1–4 không lưu lại file; số liệu của chúng chỉ còn trong mục Thực nghiệm. `r01` tái lập đúng kết quả cuối của thực nghiệm 4.
+Các lần chạy trong thực nghiệm 1–4 không lưu lại file; số liệu của chúng chỉ còn trong [`EXPERIMENTS.md`](EXPERIMENTS.md). `r01` tái lập đúng kết quả cuối của thực nghiệm 4.
 Phiên bản tiếp theo nên đặt là `r03` (và `f03` nếu đổi dữ liệu hoặc tham số đặc trưng).
 
 ## Kết quả `r02` (bộ gộp 4 nguồn, unknown 3000, 24/10/2026)
@@ -213,7 +213,7 @@ Nhận xét:
 
 ### Đánh giá từng lớp (test, `r02`)
 
-Tính từ `results/r02/test_pred_*.npy` và `features/f02/y_test.npy` (cùng số với `test_report.txt` và `confusion_*.png`). P = precision, R = recall.
+Tính từ `data/results/r02/test_pred_*.npy` và `data/features/f02/y_test.npy` (cùng số với `test_report.txt` và `confusion_*.png`). P = precision, R = recall.
 
 | Lớp (số ảnh test) | sift + LogReg P / R / F1 | sift + RF P / R / F1 | hog + LogReg P / R / F1 |
 |---|---|---|---|
@@ -246,7 +246,7 @@ Nhận xét theo lớp:
 
 ## Kết quả chạy thử (mẫu nhỏ, 12/10/2026)
 
-Số liệu dưới đây là của phiên bản **`r01`** (`results/r01/`; biểu đồ và bảng đầy đủ trong `code/04_report.ipynb`).
+Số liệu dưới đây là của phiên bản **`r01`** (`data/results/r01/`; biểu đồ và bảng đầy đủ trong `code/04_report.ipynb`).
 
 Chạy trên **519/15.187 ảnh** (train 261, val 42, test 216), chỉ để kiểm tra pipeline, **không dùng làm kết quả báo cáo**.
 Val chỉ có 42 ảnh và không có `ride`, nên việc chọn mô hình còn rất nhiễu.
@@ -301,7 +301,7 @@ Máy: Apple Silicon (arm64), 10 CPU (4 nhân hiệu năng cao + 6 nhân tiết k
 
 ### `f02` / `r02` (12.833 ảnh, 24/10/2026)
 
-**Bước 1** (`f02`, 10 khối, `features/f02/timing_extract.csv`): tổng thời gian thực **247.2 s**.
+**Bước 1** (`f02`, 10 khối, `data/features/f02/timing_extract.csv`): tổng thời gian thực **247.2 s**.
 
 | Công đoạn | Thời gian thực (s) |
 |---|---|
@@ -328,7 +328,7 @@ Máy: Apple Silicon (arm64), 10 CPU (4 nhân hiệu năng cao + 6 nhân tiết k
 
 ### `f01` / `r01` (mẫu 519 ảnh, 12/10/2026)
 
-**Bước 1: trích đặc trưng** (`f01`, đo bằng code, `features/f01/timing_extract.csv`). Tổng thời gian thực **16.3 s** (`run_info.json`).
+**Bước 1: trích đặc trưng** (`f01`, đo bằng code, `data/features/f01/timing_extract.csv`). Tổng thời gian thực **16.3 s** (`run_info.json`).
 
 | Khối | CPU (s, cả 519 ảnh) | CPU ms / ảnh |
 |---|---|---|
@@ -345,7 +345,7 @@ Máy: Apple Silicon (arm64), 10 CPU (4 nhân hiệu năng cao + 6 nhân tiết k
 
 Ước tính cho đủ 15.187 ảnh: khoảng 35 ms CPU / ảnh → ~9 phút CPU, chạy song song khoảng **2–3 phút**. Đây là ước tính, chưa đo.
 
-**Bước 2: chọn mô hình (48 cấu hình)**: `r01`, đo bằng code (`results/r01/val_results.csv`, `run_info.json`). Tổng thời gian thực **69.1 s**.
+**Bước 2: chọn mô hình (48 cấu hình)**: `r01`, đo bằng code (`data/results/r01/val_results.csv`, `run_info.json`). Tổng thời gian thực **69.1 s**.
 
 | Mô hình | Số lần fit trong grid | Grid search (s) | Fit lại cấu hình tốt nhất trên train (s) |
 |---|---|---|---|
@@ -372,88 +372,7 @@ Với đủ dữ liệu (train lớn gấp ~26 lần), SVM RBF tăng khoảng O(
 
 ## Thực nghiệm
 
-Tất cả chạy trên mẫu **519 ảnh** (train 261, val 42, test 216). Thời gian đo trên Apple Silicon, 10 CPU.
-
-1. **Bản đầu: 4 đặc trưng cơ bản × 3 mô hình** (12/10/2026)
-   - Vấn đề / lý do: yêu cầu đề bài (3 loại đặc trưng cơ bản, 3 mô hình ML cơ bản); người làm đồ án chọn 4 đặc trưng.
-   - Thay đổi:
-     - Đặc trưng: HOG (64×128, 3780-d), LBP (P=24, R=3, uniform, lưới 3×3 để giữ vị trí, 234-d), Color HSV (8×8×8, nửa trên/dưới, 1024-d), Dense SIFT (bước 8 px, size 16) + BoVW (K=500, MiniBatchKMeans chỉ học trên train, chuẩn hóa Hellinger, 500-d), cộng `fused` = nối 4 khối.
-     - Mô hình: LogReg, SVM RBF (PCA 256 cho HOG/fused để giảm chiều), RF.
-     - Cân bằng lớp bằng `class_weight` (không oversample, để giữ phân bố thật). Chọn siêu tham số bằng `GridSearchCV` + `PredefinedSplit` (train → val), scoring macro-F1.
-   - Kết quả (mốc ban đầu):
-     - Val tốt nhất: SIFT + SVM 0.345.
-     - Test tốt nhất: Fused + LogReg 0.254.
-     - Thời gian: chưa đo.
-   - Nhận xét: RF thường chỉ đoán `unknown` khi mỗi lớp chỉ có vài chục ảnh.
-   - Phiên bản: không còn file (xem bảng Phiên bản kết quả).
-2. **Thêm XGBoost** (12/10/2026)
-   - Vấn đề / lý do: người làm đồ án yêu cầu; XGBoost thường mạnh với dữ liệu dạng bảng.
-   - Thay đổi:
-     - Cân bằng lớp bằng `sample_weight`, vì XGBoost multi-class không có `class_weight`.
-     - Lưới: `n_estimators` {300, 600}, `max_depth` {4, 6}, `learning_rate` {0.05, 0.1}; cố định `subsample` 0.8, `colsample_bytree` 0.5, `max_bin` 256 (mặc định).
-   - Kết quả:
-     - Val tốt nhất không đổi: 0.345 → 0.345 (SIFT + SVM). Tốt nhất của XGBoost: SIFT + XGBoost 0.239; các bộ khác 0.15–0.21.
-     - Test không đổi: XGBoost không được chọn cho bộ đặc trưng nào, nên không chạy test.
-     - Thời gian: chưa đo.
-   - Nhận xét: với 8–22 ảnh mỗi lớp ở train, mô hình cây gần như chỉ đoán `unknown`.
-   - Phiên bản: không còn file.
-3. **Thêm 5 đặc trưng và 2 cách phối** (12/10/2026)
-   - Vấn đề / lý do: dựa trên README dữ liệu.
-     - `talk_on_phone` / `eat` có vật nhỏ nằm gần đầu, dễ bị "chìm" khi tính đặc trưng trên cả crop.
-     - Vật của `ride` chỉ ~47% nằm trong crop, nên phải dựa vào bối cảnh và dáng người.
-     - BoVW gốc mất thông tin vị trí.
-     - Resize crop làm mất tỉ lệ khung người.
-   - Thay đổi:
-     - `geom` (8-d: tỉ lệ/kích thước bbox, mức nới thực tế 4 phía).
-     - `sift_spm` (spatial pyramid 1x1 + 2x2, trọng số 0.5/0.5).
-     - `upper` (40% phía trên: HOG 64×64 + BoVW).
-     - `gist` (Gabor kernel 5/9/15/21 × 8 hướng, lưới 4×4).
-     - `skin` (YCrCb Cr∈[133,173], Cb∈[77,127], lưới 4×4 + trọng tâm).
-     - Tổ hợp `combo_local` (sift_spm + sift_upper + color + geom + skin; nhắm vào vật nhỏ + vị trí + bối cảnh) và `fused_all` (mọi khối, dùng `sift_spm` thay cho `sift`).
-     - PCA cho SVM chuyển từ danh sách cố định sang tự động khi số chiều > 1500.
-     - Cách đánh giá: `03_final_test.py` chạy test thêm cho mô hình tốt nhất của từng loại mô hình.
-   - Kết quả:
-     - Val tốt nhất không đổi: 0.345 → 0.345 (SIFT + SVM). Đặc trưng mới tốt nhất trên val: `fused_all` + LogReg 0.323, `upper` + SVM 0.319.
-     - Test tốt nhất: 0.254 → **0.267** (`geom` + RF). Ngoài ra `fused_all` + LogReg 0.248 có balanced accuracy cao nhất (0.306); `upper` + SVM 0.244.
-     - Thời gian bước 2 (48 cấu hình): 8 phút 19 s, đo bằng `time`; XGBoost chiếm 461.9 s.
-   - Nhận xét: `geom` (8 chiều) có importance trung bình mỗi chiều cao nhất trong RF trên `fused_all`, tiếp theo là `skin`.
-   - Phiên bản: không còn file; đặc trưng cùng tham số với `f01`.
-4. **Sửa XGBoost chạy chậm** (12/10/2026)
-   - Vấn đề / lý do:
-     - XGBoost chiếm 461.9/499 s của bước 2, dù chỉ có 261 ảnh train.
-     - Đo riêng 1 lần fit trên `fused_all` (~9.300 chiều, 300 cây): 28.3 s.
-     - Với đủ dữ liệu, riêng XGBoost có thể chạy hàng giờ (ước tính, chưa đo).
-   - Thay đổi (`code/models.py`):
-     - `max_bin` 256 → 64.
-     - Thêm `PCA(256)` trước XGBoost khi bộ đặc trưng > 1500 chiều (áp dụng cho `hog`, `sift_spm`, `upper`, `fused`, `combo_local`, `fused_all`).
-   - Kết quả:
-     - Thời gian: XGBoost cả 12 bộ đặc trưng 461.9 s → 46 s; riêng `max_bin=64` (chưa PCA) giảm 1 lần fit từ 28.3 s xuống 15.0 s.
-     - Val tốt nhất: 0.345 → **0.352** (SIFT + XGBoost, trước đó 0.239). `geom` + XGBoost 0.266 vượt `geom` + RF 0.255.
-     - Test tốt nhất: 0.267 → **0.283** (`geom` + XGBoost, thay cho `geom` + RF). Nhưng cấu hình tốt nhất trên val (SIFT + XGBoost) chỉ đạt **0.173** trên test.
-   - Nhận xét:
-     - Bộ `sift` chỉ có 500 chiều nên **không bị PCA**: mức tăng của SIFT + XGBoost đến từ `max_bin=64`, cộng thêm độ nhiễu của val 42 ảnh, không phải từ PCA.
-     - Val nhỏ dễ chọn nhầm: tốt nhất trên val lại gần mức đoán ngẫu nhiên trên test.
-   - Phiên bản: kết quả cuối được tái lập trong `r01` (bước 2 mất 69.1 s).
-
-5. **Chuyển sang bộ gộp 4 nguồn, giảm `unknown`, chỉ giữ sift + hog × LogReg** (24/10/2026)
-   - Vấn đề / lý do:
-     - `r01` chỉ có 519 ảnh (val 42): chọn mô hình rất nhiễu (val tốt nhất 0.352 nhưng test 0.173).
-     - Bộ gộp `dataset_6class_crops` có 22.366 ảnh, nhiều ảnh hành động hơn hẳn bộ V-COCO đang có.
-     - `unknown` chiếm 56%; giảm xuống 3.000 để các lớp cân bằng hơn và chạy nhanh hơn.
-     - Chạy đủ 12 bộ × 4 mô hình ước tính 1–1,5 giờ; người làm đồ án chọn chỉ giữ 2 đặc trưng cơ bản bổ sung cho nhau (SIFT: chi tiết vật; HOG: dáng người) và 1 mô hình (LogReg, ổn định nhất ở `r01`). `geom` bị loại vì dựa vào bbox trong dữ liệu chứ không phải đặc trưng ảnh truyền thống.
-   - Thay đổi:
-     - Dữ liệu: `vcoco_6class_crops/labels.csv` → `train_test_split/labels_split_unk3000.csv` (chia 70/15/15 theo ảnh gốc, phân tầng lớp × nguồn, seed 2026; giữ 3.000 `unknown` đầu sau khi xáo).
-     - Đặc trưng dùng ở bước 2: 12 bộ → `sift`, `hog`. Mô hình: 4 → LogReg (lưới C {0.01, 0.1, 1, 10} không đổi). Tham số đặc trưng không đổi.
-   - Kết quả (`f02` / `r02`, 12.833 ảnh):
-     - sift + LogReg: val 0.331 → **0.430**, test 0.262 → **0.434** (`r01` → `r02`).
-     - hog + LogReg: val 0.219 → 0.362; test 0.387 (`r01` không chạy test cho hog + LogReg).
-     - Chênh lệch val–test ≤ 0.03 (ở `r01` tới 0.18).
-     - Thời gian: bước 1 247 s, bước 2 16.3 s, bước 3 4.4 s.
-   - Nhận xét / tác dụng phụ:
-     - **Không so trực tiếp với `r01`**: khác dữ liệu, khác test, và test của `r02` đã giảm `unknown`. Phần tăng chủ yếu đến từ có nhiều dữ liệu hơn (train 261 → 9.069) và phân bố lớp cân bằng hơn, không phải từ thay đổi mô hình.
-     - C tốt nhất là 0.01 (biên dưới của lưới) cho cả 2 đặc trưng, nên lưới C chưa đủ rộng.
-     - Bỏ các bộ phối và `geom` nên không còn mốc "phối có hơn đơn lẻ không" trên dữ liệu lớn.
-   - Phiên bản: `f02`, `r02` (lần chạy dở dang: `f02_interrupted`, `r02_interrupted`, không dùng).
+Chỉ ghi **thực nghiệm mới nhất**. Toàn bộ nhật ký (mục 1–6), kết luận tạm và [bài học kinh nghiệm](EXPERIMENTS.md#bài-học-kinh-nghiệm) nằm trong [`EXPERIMENTS.md`](EXPERIMENTS.md).
 
 6. **Thêm Random Forest vào `r02`** (24/10/2026)
    - Vấn đề / lý do: người làm đồ án muốn so LogReg với một mô hình phi tuyến trên cùng đặc trưng `sift`, `hog` của `f02`. Ước tính trước khi chạy: 5–7 phút, chủ yếu là hog + RF.
@@ -469,30 +388,13 @@ Tất cả chạy trên mẫu **519 ảnh** (train 261, val 42, test 216). Thờ
      - `min_samples_leaf=3` thắng 1 ở cả 2 đặc trưng: lá lớn hơn (ít khớp quá mức) tốt hơn.
    - Phiên bản: `r02` (cập nhật bằng `--update`; `run_info.json` ghi cả 2 lần chạy bước 2 và 3).
 
-Kết luận tạm: trên mẫu nhỏ, các tổ hợp (`fused`, `fused_all`, `combo_local`) ổn định hơn đặc trưng đơn lẻ; `geom` là đặc trưng rẻ mà hiệu quả nhất; LogReg ổn nhất với dữ liệu ít và nhiều chiều. **Chưa có kết luận nào đáng tin cho tới khi chạy đủ dữ liệu.**
-
-### Bài học kinh nghiệm
-
-- **XGBoost chậm theo số cột, không phải theo số ảnh.** Thuật toán `hist` dựng histogram cho từng cột ở mỗi vòng, và multi-class 6 lớp nghĩa là 6 cây mỗi vòng. Vì vậy với bộ 9.300 chiều, 261 ảnh vẫn mất khoảng 28 s/lần fit.
-  - Cách xử lý: **giảm chiều bằng PCA (256) trước XGBoost** khi > 1500 chiều, và giảm `max_bin` xuống 64.
-  - Cái giá: cây không còn tách trực tiếp trên từng chiều gốc của BoVW/HOG nữa, mà trên thành phần PCA.
-  - Áp dụng tương tự cho SVM RBF (cũng PCA 256).
-- **Không chạy song song lồng nhau**: `GridSearchCV(n_jobs=-1)` đã song song theo cấu hình, nên mô hình bên trong (RF/XGBoost) để `n_jobs=1`. Chỉ khi fit một mô hình đơn lẻ mới cho dùng hết CPU (`use_all_cores` trong `models.py`).
-- **XGBoost không có `class_weight`**: phải truyền `sample_weight=compute_sample_weight("balanced", y)` vào `fit` (qua `clf__sample_weight` trong Pipeline). Train phải có đủ cả 6 lớp, nếu không XGBoost báo lỗi nhãn.
-- **Val nhỏ thì không chọn mô hình được**: với 42 ảnh, cấu hình tốt nhất trên val (0.352) chỉ đạt 0.173 trên test. Cần đủ dữ liệu, hoặc chuyển sang cross-validation theo ảnh.
-- **Mô hình cây / SVM trên bộ phối hợp lớn dễ sụp về đoán toàn `unknown`** (macro-F1 0.152) khi mỗi lớp chỉ có vài chục ảnh; LogReg ổn định hơn.
-- **`class_weight="balanced_subsample"` chưa đủ để RF quan tâm lớp nhỏ**: ở `r02`, RF vẫn thiên về `hold`/`ride`/`unknown` (lớp nhiều ảnh) và bỏ rơi `eat/drink`, `talk_on_phone`. Với đặc trưng nhiều chiều (hog 3780-d), lệch còn mạnh hơn. LogReg cân bằng giữa các lớp tốt hơn.
-- **Giá trị tốt nhất nằm ở biên lưới thì lưới chưa đủ rộng**: ở `r02`, C = 0.01 (nhỏ nhất) thắng ở cả sift và hog. Cần mở rộng lưới về phía đó trước khi kết luận.
-- **Ước tính thời gian từ mẫu nhỏ có thể thấp hơn thực tế**: ước tính bước 1 cho 12.833 ảnh từ số đo 519 ảnh là 2–4 phút, thực tế 4 phút 7 s; ms/ảnh của SIFT và BoVW tăng 3.5–11 lần khi chạy song song lâu (nguyên nhân chưa xác định, xem Thời gian chạy). Nên chạy thử trên vài nghìn ảnh trước khi ước tính cho lần chạy lớn.
-- **Chọn mô hình phải có luật phá hoà**: với val nhỏ, nhiều cấu hình có cùng macro-F1 (ví dụ sift + RF và sift_spm + RF cùng 0.26462). Sắp xếp không ổn định thì mỗi lần chạy có thể chọn cấu hình khác; `rank_results` trong `models.py` xét macro-F1 → balanced acc → tên.
-
 ## Cần làm
 
 **Trạng thái hiện tại (để tiếp tục lần sau):**
 - `.venv` đã cài đủ thư viện, `libomp` đã cài.
-- `features/f02/` có đủ 10 khối đặc trưng cho bộ gộp (12.833 ảnh, `labels_split_unk3000.csv`). **Không cần chạy lại bước 1** khi chỉ đổi mô hình hoặc lưới: chạy `02_train_select.py --feat_version f02 --version r03 ...`.
-- `results/r02/` là **kết quả mới nhất** (sift, hog × LogReg, RF); notebook đang hiển thị `r02`.
-- `features/f01/`, `results/r01/` là bản cũ trên 519 ảnh V-COCO, giữ để tham khảo.
+- `data/features/f02/` có đủ 10 khối đặc trưng cho bộ gộp (12.833 ảnh, `labels_split_unk3000.csv`). **Không cần chạy lại bước 1** khi chỉ đổi mô hình hoặc lưới: chạy `02_train_select.py --feat_version f02 --version r03 ...`.
+- `data/results/r02/` là **kết quả mới nhất** (sift, hog × LogReg, RF); notebook đang hiển thị `r02`.
+- `data/features/f01/`, `data/results/r01/` là bản cũ trên 519 ảnh V-COCO, giữ để tham khảo.
 
 Việc bắt buộc, làm trước:
 - [ ] **Lấy đủ dữ liệu**: hiện chỉ có 519/15.187 crop trong `data/vcoco_6class_crops/`. Kiểm tra bằng `find data/vcoco_6class_crops/train -name '*.jpg' | wc -l`, phải ra 6803.
@@ -508,7 +410,7 @@ Cải thiện tiếp từ `r02`:
 - [ ] **Mở rộng lưới C của LogReg về phía nhỏ** (thêm 0.001, 0.003): ở `r02`, C = 0.01 là giá trị nhỏ nhất của lưới và thắng ở cả sift và hog. Rẻ: bước 2 chỉ ~16 s.
 - [ ] Cải thiện lớp `hold` (recall test 0.24–0.29 với LogReg, thấp nhất). Đã xem confusion (mục Đánh giá từng lớp): `hold` bị nhầm đều sang `eat/drink`, `talk_on_phone`, `work_on_computer`, và 48% lỗi nằm trong 4 lớp "tay cầm vật". Hướng thử: đặc trưng giữ vị trí vật so với đầu/tay (SIFT spatial pyramid, `upper` thân trên) thay cho BoVW toàn ảnh. Lý do: lỗi đến từ việc không phân biệt được vật ở đâu, không phải do thiếu dữ liệu.
 - [ ] Xem bằng mắt các ảnh `eat/drink` → `work_on_computer` và `unknown` → `ride` để kiểm chứng giả thuyết "do bối cảnh" (bàn ăn/bàn làm việc, người đứng cạnh xe).
-- [ ] **Late fusion sift + LogReg và sift + RF** (trung bình xác suất): 2 mô hình có macro-F1 gần bằng nhau (0.434 / 0.432) nhưng mạnh ở các lớp khác nhau (LogReg: `eat/drink`, `talk_on_phone`; RF: `hold`, `ride`, `unknown`). Chọn trọng số trên val. Rẻ: cả 2 mô hình đã lưu trong `results/r02/models/`, nhưng các model đó train trên train+val, nên chọn trọng số phải fit lại trên train.
+- [ ] **Late fusion sift + LogReg và sift + RF** (trung bình xác suất): 2 mô hình có macro-F1 gần bằng nhau (0.434 / 0.432) nhưng mạnh ở các lớp khác nhau (LogReg: `eat/drink`, `talk_on_phone`; RF: `hold`, `ride`, `unknown`). Chọn trọng số trên val. Rẻ: cả 2 mô hình đã lưu trong `data/results/r02/models/`, nhưng các model đó train trên train+val, nên chọn trọng số phải fit lại trên train.
 
 Cải thiện mô hình và đặc trưng (chưa làm):
 - [ ] **Fisher Vector / VLAD** thay cho BoVW để mã hoá SIFT mạnh hơn.

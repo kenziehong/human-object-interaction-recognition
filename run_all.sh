@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Chạy toàn bộ pipeline theo thứ tự: trích đặc trưng -> chọn mô hình trên val -> test -> notebook báo cáo.
 # Cách dùng (ở thư mục gốc repo):
-#   bash run_all.sh                     # tạo features/f01 và results/r01
+#   bash run_all.sh                     # tạo data/features/f01 và data/results/r01
 #   bash run_all.sh f02 r02 "ghi chú"   # phiên bản khác
 # Tuỳ chọn qua biến môi trường:
 #   LABELS=data/train_test_split/labels_split_unk3000.csv       file nhãn (mặc định trong config.py)
@@ -22,14 +22,14 @@ cd "$(dirname "$0")/code"
 PY=../.venv/bin/python
 [ -x "$PY" ] || { echo "Chưa có .venv: xem mục Cài đặt trong README"; exit 1; }
 
-echo "== Bước 1: trích đặc trưng -> features/$FEAT"
-if [ -e "../features/$FEAT/y_train.npy" ]; then
-  echo "   features/$FEAT đã có, dùng lại"
+echo "== Bước 1: trích đặc trưng -> data/features/$FEAT"
+if [ -e "../data/features/$FEAT/y_train.npy" ]; then
+  echo "   data/features/$FEAT đã có, dùng lại"
 else
   $PY 01_extract_features.py --version "$FEAT" --note "$NOTE" ${LABELS:+--labels "$LABELS"} ${DATA_DIR:+--data_dir "$DATA_DIR"}
 fi
 
-echo "== Bước 2: chọn mô hình trên val -> results/$RES"
+echo "== Bước 2: chọn mô hình trên val -> data/results/$RES"
 # shellcheck disable=SC2086  (FEATS/MODELS cố ý tách theo khoảng trắng)
 $PY 02_train_select.py --feat_version "$FEAT" --version "$RES" --note "$NOTE" \
   ${FEATS:+--feats $FEATS} ${MODELS:+--models $MODELS}
@@ -40,4 +40,4 @@ $PY 03_final_test.py --version "$RES"
 echo "== Bước 4: chạy notebook báo cáo (hiển thị $RES)"
 RUN_VERSION="$RES" ../.venv/bin/jupyter nbconvert --to notebook --execute --inplace 04_report.ipynb
 
-echo "Xong. Xem kết quả trong code/04_report.ipynb và results/$RES/"
+echo "Xong. Xem kết quả trong code/04_report.ipynb và data/results/$RES/"

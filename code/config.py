@@ -7,12 +7,12 @@ warnings.filterwarnings("ignore", message=r".*encountered in matmul", category=R
 
 ROOT = Path(__file__).resolve().parent.parent
 # Dữ liệu mặc định. 01_extract_features.py --labels đổi sang file nhãn khác (đường dẫn ảnh tính từ thư mục
-# chứa file nhãn); file đã dùng được ghi vào features/<fXX>/run_info.json để notebook đọc lại đúng dữ liệu.
+# chứa file nhãn); file đã dùng được ghi vào data/features/<fXX>/run_info.json để notebook đọc lại đúng dữ liệu.
 LABELS_CSV = ROOT / "data" / "vcoco_6class_crops" / "labels.csv"
 DATA_DIR = LABELS_CSV.parent
-# Mỗi lần chạy ghi vào 1 thư mục phiên bản: features/<version>/, results/<version>/ (xem versioning.py)
-FEAT_ROOT = ROOT / "features"
-RESULT_ROOT = ROOT / "results"
+# Mỗi lần chạy ghi vào 1 thư mục phiên bản: data/features/<version>/, data/results/<version>/ (xem versioning.py)
+FEAT_ROOT = ROOT / "data" / "features"
+RESULT_ROOT = ROOT / "data" / "results"
 
 # Thứ tự lớp cố định -> label_id
 CLASSES = ["hold", "ride", "eat/drink", "talk_on_phone", "work_on_computer", "unknown"]
@@ -21,7 +21,7 @@ SPLITS = ["train", "val", "test"]
 
 # Đặc trưng cơ bản (yêu cầu ban đầu)
 FEATURES = ["hog", "lbp", "color", "sift"]
-# Đặc trưng bổ sung (khối nguyên tử lưu trong features/)
+# Đặc trưng bổ sung (khối nguyên tử lưu trong data/features/)
 EXTRA_FEATURES = ["geom", "sift_spm", "hog_upper", "sift_upper", "gist", "skin"]
 ATOMIC_FEATURES = FEATURES + EXTRA_FEATURES
 

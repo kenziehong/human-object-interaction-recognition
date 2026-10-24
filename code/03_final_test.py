@@ -1,7 +1,7 @@
 """Bước 4: lấy cấu hình tốt nhất theo val (tổng thể, tốt nhất cho từng bộ đặc trưng, tốt nhất cho từng mô hình),
 train lại trên train+val, đánh giá test MỘT lần.
 
-Chạy:  python 03_final_test.py --version r01   (đọc results/r01/val_results.csv, ghi kết quả test vào results/r01/)
+Chạy:  python 03_final_test.py --version r01   (đọc data/results/r01/val_results.csv, ghi kết quả test vào data/results/r01/)
 Không ghi đè kết quả test đã có trừ khi truyền --update.
 """
 import argparse

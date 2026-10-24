@@ -13,12 +13,11 @@ data/vcoco_6class_crops/*
 !data/vcoco_6class_crops/README.md
 # File split train/val/test (chỉ là CSV nhãn, không chứa ảnh) được đưa lên repo
 !data/train_test_split/
-features/
-results/
+data/features/
+data/results/
 
 # Bí mật
 .env
-CLAUDE.md
 
 # Bài báo PDF chỉ để ở máy, không đưa lên repo (bản quyền thuộc tác giả/IEEE); link ở doc/README_paper.md
 doc/*.pdf
