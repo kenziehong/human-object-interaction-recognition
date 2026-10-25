@@ -26,12 +26,11 @@ class ExperimentConfig:
     seed: int = 42
     batch_size: int = 16
     max_epochs: int = 30
-    patience: int = 6
+    patience: int = 5
     min_delta: float = 0.0
     classifier_lr: float = 1e-3
     backbone_lr: float = 1e-5
     weight_decay: float = 1e-4
-    unfreeze_epoch: int = 3
     num_workers: int = 0
     device: str = "auto"
     pretrained: bool = True
@@ -45,28 +44,28 @@ class ExperimentConfig:
 
 def add_experiment_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--backbone", choices=("resnet50", "efficientnet_b0"), default="resnet50")
-    parser.add_argument("--setup", choices=("th1", "th2", "th3"), default="th1")
+    parser.add_argument("--setup", choices=("th1", "th2"), default="th1",
+                        help="th1: chỉ classifier; th2: fine-tune toàn bộ model")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--epochs", type=int, default=30)
-    parser.add_argument("--patience", type=int, default=6)
+    parser.add_argument("--patience", type=int, default=5)
     parser.add_argument("--min-delta", type=float, default=0.0)
     parser.add_argument("--classifier-lr", type=float)
     parser.add_argument("--backbone-lr", type=float, default=1e-5)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
-    parser.add_argument("--unfreeze-epoch", type=int, default=3)
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--device", choices=("auto", "mps", "cpu"), default="auto")
     parser.add_argument("--no-pretrained", action="store_true")
 
 
 def config_from_args(args: argparse.Namespace) -> ExperimentConfig:
-    default_lr = 1e-4 if args.setup == "th3" else 1e-3
+    default_lr = 1e-3
     return ExperimentConfig(
         backbone=args.backbone, setup=args.setup, seed=args.seed, batch_size=args.batch_size,
         max_epochs=args.epochs, patience=args.patience, min_delta=args.min_delta,
         classifier_lr=args.classifier_lr or default_lr, backbone_lr=args.backbone_lr,
-        weight_decay=args.weight_decay, unfreeze_epoch=args.unfreeze_epoch,
+        weight_decay=args.weight_decay,
         num_workers=args.num_workers, device=args.device, pretrained=not args.no_pretrained,
     )
 
@@ -141,7 +140,7 @@ def update_results_summary(outputs_dir: Path | None = None) -> Path:
             f"Trạng thái: {'đã đánh giá test' if test else ('đang huấn luyện' if in_progress else ('đã khóa, chưa đánh giá test' if config.get('locked') else 'chưa khóa'))}",
             ("Tham số: " + ", ".join(f"{name}={config.get(name)}" for name in (
                 "pretrained", "batch_size", "max_epochs", "patience", "min_delta",
-                "classifier_lr", "backbone_lr", "weight_decay", "unfreeze_epoch", "num_workers", "device_actual"))),
+                "classifier_lr", "backbone_lr", "weight_decay", "num_workers", "device_actual"))),
             f"Epoch tốt nhất: {config.get('best_epoch')}",
             (f"Tiến độ: epoch {config.get('last_epoch')}/{config.get('max_epochs')}"
              if in_progress and config.get("last_epoch") else ""),

@@ -34,13 +34,11 @@ class PadToSquare:
         return canvas
 
 
-def make_transform(augment: bool = False):
-    operations = [PadToSquare(IMAGE_SIZE)]
-    if augment:
-        operations += [transforms.RandomHorizontalFlip(p=0.5),
-                       transforms.ColorJitter(0.1, 0.1, 0.1, 0.02)]
-    operations += [transforms.ToTensor(), transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)]
-    return transforms.Compose(operations)
+def make_transform():
+    return transforms.Compose([
+        PadToSquare(IMAGE_SIZE), transforms.ToTensor(),
+        transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+    ])
 
 
 def _image_path(crop_path: str, image_root: Path = IMAGE_ROOT) -> Path:

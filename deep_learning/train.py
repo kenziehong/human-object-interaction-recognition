@@ -1,4 +1,4 @@
-"""Train one experiment or all six baselines using train/validation only."""
+"""Train one experiment using the training and validation splits."""
 
 from __future__ import annotations
 
@@ -95,9 +95,8 @@ def train_one(cfg: ExperimentConfig, manifest, run_dir: Path | None = None) -> P
     run_dir = run_dir or _new_run_dir(cfg)
     log_run(run_dir, f"Bắt đầu run {run_dir.name}")
     log_run(run_dir, "Cấu hình: " + ", ".join(f"{key}={value}" for key, value in cfg.to_dict().items()))
-    augment = cfg.setup in ("th2", "th3")
     datasets = {
-        "train": InteractionImageDataset(manifest, "train", make_transform(augment)),
+        "train": InteractionImageDataset(manifest, "train", make_transform()),
         "train_eval": InteractionImageDataset(manifest, "train", make_transform()),
         "val": InteractionImageDataset(manifest, "val", make_transform()),
     }
@@ -113,7 +112,7 @@ def train_one(cfg: ExperimentConfig, manifest, run_dir: Path | None = None) -> P
     log_run(run_dir, f"Runtime: torch={torch.__version__}, torchvision={__import__('torchvision').__version__}, "
                      f"device={device}, model_device={next(model.parameters()).device}, "
                      f"MPS built={torch.backends.mps.is_built()}, available={torch.backends.mps.is_available()}")
-    set_backbone_trainable(model, cfg.backbone, cfg.setup == "th3" and cfg.unfreeze_epoch <= 1)
+    set_backbone_trainable(model, cfg.backbone, cfg.setup == "th2")
     optimizer = make_optimizer(model, cfg)
     criterion = torch.nn.CrossEntropyLoss(weight=torch.tensor(weights, dtype=torch.float32, device=device))
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=2)
@@ -131,13 +130,8 @@ def train_one(cfg: ExperimentConfig, manifest, run_dir: Path | None = None) -> P
     with history_path.open("w", newline="", encoding="utf-8") as history_file:
         writer = None
         for epoch in range(1, cfg.max_epochs + 1):
-            if cfg.setup == "th3" and epoch == cfg.unfreeze_epoch:
-                set_backbone_trainable(model, cfg.backbone, True)
-                optimizer = make_optimizer(model, cfg)
-                scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-                    optimizer, mode="min", factor=0.5, patience=2)
             _, _, _, _, train_time = run_epoch(model, loaders["train"], criterion, device, optimizer)
-            # Report train metrics on the complete unaugmented split in eval mode.
+            # Report train metrics on the complete training split in eval mode.
             train_loss, train_metrics, train_y, train_pred, train_eval_time = run_epoch(
                 model, loaders["train_eval"], criterion, device)
             val_loss, val_metrics, val_y, val_pred, val_time = run_epoch(
@@ -203,19 +197,8 @@ def train_one(cfg: ExperimentConfig, manifest, run_dir: Path | None = None) -> P
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     add_experiment_arguments(parser)
-    parser.add_argument("--all-baselines", action="store_true")
     args = parser.parse_args()
-    manifest = load_manifest()
-    if args.all_baselines:
-        for backbone in ("resnet50", "efficientnet_b0"):
-            for setup in ("th1", "th2", "th3"):
-                values = vars(args).copy()
-                values.update(backbone=backbone, setup=setup)
-                current = argparse.Namespace(**values)
-                cfg = config_from_args(current)
-                train_one(cfg, manifest)
-    else:
-        train_one(config_from_args(args), manifest)
+    train_one(config_from_args(args), load_manifest())
 
 
 if __name__ == "__main__":

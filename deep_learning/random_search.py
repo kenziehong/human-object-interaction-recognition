@@ -15,19 +15,17 @@ from train import train_one
 
 
 BACKBONES = ("resnet50", "efficientnet_b0")
-SETUPS = ("th1", "th2", "th3")
+SETUPS = ("th1", "th2")
 CLASSIFIER_LRS = (3e-4, 1e-3, 3e-3)
-TH3_CLASSIFIER_LRS = (1e-4, 3e-4, 1e-3)
-BACKBONE_LRS = (1e-5, 3e-5, 1e-4)
-WEIGHT_DECAYS = (1e-5, 1e-4, 1e-3)
+BACKBONE_LRS = (1e-5, 3e-5)
+WEIGHT_DECAYS = (1e-4, 1e-3)
 BATCH_SIZES = (16, 32)
-UNFREEZE_EPOCH = 3
 
 
 def candidate_configs(backbone: str, setup: str, device: str, num_workers: int):
     """Enumerate the supported search space before random sampling."""
-    classifier_lrs = TH3_CLASSIFIER_LRS if setup == "th3" else CLASSIFIER_LRS
-    backbone_lrs = BACKBONE_LRS if setup == "th3" else (1e-5,)
+    classifier_lrs = CLASSIFIER_LRS
+    backbone_lrs = BACKBONE_LRS if setup == "th2" else (1e-5,)
     for classifier_lr, backbone_lr, weight_decay, batch_size in itertools.product(
             classifier_lrs, backbone_lrs, WEIGHT_DECAYS, BATCH_SIZES):
         yield ExperimentConfig(
@@ -36,12 +34,11 @@ def candidate_configs(backbone: str, setup: str, device: str, num_workers: int):
             seed=42,
             batch_size=batch_size,
             max_epochs=30,
-            patience=6,
+            patience=5,
             min_delta=0.0,
             classifier_lr=classifier_lr,
             backbone_lr=backbone_lr,
             weight_decay=weight_decay,
-            unfreeze_epoch=UNFREEZE_EPOCH,
             num_workers=num_workers,
             device=device,
             pretrained=True,
@@ -115,7 +112,7 @@ def write_search_report(candidates: list[dict], winners: dict, search_seed: int,
             f"TỐT NHẤT: {key[0]} | {key[1].upper()}",
             (f"Tham số: batch_size={cfg['batch_size']}, classifier_lr={cfg['classifier_lr']}, "
              f"backbone_lr={cfg['backbone_lr']}, weight_decay={cfg['weight_decay']}, "
-             f"unfreeze_epoch={cfg['unfreeze_epoch']}, epochs={cfg['max_epochs']}, "
+             f"epochs={cfg['max_epochs']}, "
              f"patience={cfg['patience']}"),
         ])
         lines.extend(metric_lines("Validation", val))
@@ -152,15 +149,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--device", choices=("mps", "cpu", "auto"), default="auto")
     parser.add_argument("--num-workers", type=int, default=0)
-    parser.add_argument("--configs-per-backbone", type=int, default=10,
-                        help="Số cấu hình tối đa cho mỗi cặp TH/backbone (1–10).")
+    parser.add_argument("--configs-per-backbone", type=int, default=5,
+                        help="Số cấu hình tối đa cho mỗi cặp TH/backbone (1–5).")
     parser.add_argument("--search-seed", type=int, default=42,
                         help="Seed để lấy mẫu ngẫu nhiên cấu hình; không phải seed huấn luyện.")
     parser.add_argument("--backbones", nargs="+", choices=BACKBONES, default=list(BACKBONES))
     parser.add_argument("--setups", nargs="+", choices=SETUPS, default=list(SETUPS))
     args = parser.parse_args()
-    if not 1 <= args.configs_per_backbone <= 10:
-        parser.error("--configs-per-backbone phải nằm trong khoảng 1–10")
+    if not 1 <= args.configs_per_backbone <= 5:
+        parser.error("--configs-per-backbone phải nằm trong khoảng 1–5")
 
     report_path = new_search_report_path()
     write_search_report([], {}, args.search_seed, report_path, "Đang chuẩn bị dữ liệu.")
