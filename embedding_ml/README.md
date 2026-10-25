@@ -52,29 +52,31 @@ python embedding_ml/train_search.py
 ```
 
 Mặc định script đọc `data/embedding_csv/embeddings_v2.csv`. Mỗi search fit
-các cấu hình trên train và chọn cấu hình theo macro-F1 trên validation. Sau
-khi chọn tham số, script đánh giá validation bằng model fit trên train, rồi
-fit model dùng để lưu trên train+val và đánh giá model đó trên test. Test
-không tham gia chọn tham số.
+từng cấu hình đúng một lần trên train và chọn model có macro-F1 cao nhất trên
+validation. Chính model đó được dùng để đánh giá train, validation, test và
+được lưu; test không tham gia chọn model.
 
-Các file được tạo trong `embedding_ml/outputs/`:
+Mặc định, các file được lưu ở:
 
 - `models_v2/<backbone>_<classifier>.joblib`: 12 model và metadata gồm tên
-  backbone, classifier, nhãn và tham số đã chọn.
-- `metrics.csv` và `metrics.json`: accuracy cùng macro/weighted precision,
-  recall và F1 cho validation và test của từng tổ hợp.
-- `all_results_v2.txt`: tham số tốt nhất, metric tổng hợp và classification
-  report theo từng lớp cho validation và test.
+  backbone, classifier, nhãn và tham số đã chọn. Model đã tồn tại sẽ được bỏ qua.
+- `all_results_v2.txt`: tham số tốt nhất, metric và classification report theo
+  từng lớp cho train, validation và test.
 
-Có thể đổi CSV đầu vào, thư mục output, số lần lấy mẫu ngẫu nhiên và seed:
+Có thể đổi CSV đầu vào, thư mục model, file kết quả, số lần lấy mẫu ngẫu nhiên
+và seed:
 
 ```bash
 python embedding_ml/train_search.py \
   --csv data/embedding_csv/embeddings_v2.csv \
-  --output-dir embedding_ml/outputs \
-  --n-iter 30 \
+  --model-dir embedding_ml/outputs/models_v2 \
+  --results-file embedding_ml/outputs/all_results_v2.txt \
+  --n-iter 15 \
   --seed 42
 ```
+
+Hai đường dẫn `--model-dir` và `--results-file` ở trên cũng là giá trị mặc
+định, nên có thể bỏ chúng nếu muốn lưu ở vị trí mặc định.
 
 ## 3. Dự đoán một hoặc nhiều ảnh
 

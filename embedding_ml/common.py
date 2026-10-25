@@ -12,9 +12,8 @@ from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
-from xgboost import XGBClassifier
 
-EMBEDDINGS = ("resnet50", "efficientnet_b0", "vit_b_16")
+EMBEDDINGS = ("resnet50", "efficientnet_b0")
 CLASSIFIERS = ("logreg", "svm", "random_forest", "xgboost")
 SPLITS = ("train", "val", "test")
 
@@ -86,23 +85,30 @@ def make_search(classifier: str, seed: int):
              "model__gamma": loguniform(1e-4, 5e-3)},
         ]
     if classifier == "random_forest":
+        # Candidate search is sequential, so let each forest use all CPU cores.
         estimator = RandomForestClassifier(n_jobs=-1, class_weight="balanced", random_state=seed)
         return Pipeline([("model", estimator)]), {
-            "model__n_estimators": [200, 400, 600, 800, 1200, 1600],
-            "model__max_depth": [None, 10, 20, 40, 60, 80],
-            "model__min_samples_split": [2, 5, 10, 20],
-            "model__min_samples_leaf": [1, 2, 4, 8, 12],
-            "model__max_features": ["sqrt", 0.3, 0.5, 0.8],
-            "model__class_weight": ["balanced", "balanced_subsample"],
+            "model__n_estimators": [100, 200, 400],
+            "model__max_depth": [None, 20, 40],
+            "model__min_samples_split": [2, 5, 10],
+            "model__min_samples_leaf": [1, 2, 4],
+            "model__max_features": ["sqrt", 0.5],
+            "model__class_weight": ["balanced"],
         }
     if classifier == "xgboost":
+        # Import the native XGBoost runtime only when this estimator is needed.
+        # Importing it for unrelated tasks such as SVM inference loads a second
+        # OpenMP runtime alongside PyTorch on macOS and can crash the process.
+        from xgboost import XGBClassifier
+
+        # Candidate search is sequential, so let XGBoost use all CPU cores.
         estimator = XGBClassifier(objective="multi:softprob", eval_metric="mlogloss", n_jobs=-1,
                                   random_state=seed, tree_method="hist")
         return Pipeline([("model", estimator)]), {
-            "model__n_estimators": randint(300, 1201), "model__max_depth": randint(2, 9),
+            "model__n_estimators": randint(100, 601), "model__max_depth": randint(2, 8),
             "model__learning_rate": loguniform(0.01, 0.2),
             "model__subsample": uniform(0.7, 0.3), "model__colsample_bytree": uniform(0.7, 0.3),
-            # Previous best values clustered near low gamma/alpha and moderate lambda.
+            # Focus on a compact range to reduce training time per candidate.
             "model__min_child_weight": loguniform(0.5, 10.0), "model__gamma": uniform(0.0, 0.5),
             "model__reg_alpha": loguniform(1e-6, 1e-1), "model__reg_lambda": loguniform(1e-2, 30.0),
         }

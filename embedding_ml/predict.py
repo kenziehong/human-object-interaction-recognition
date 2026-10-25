@@ -3,7 +3,13 @@
 
 import argparse
 import json
+import os
 from pathlib import Path
+
+# Keep single-image inference from starting competing OpenMP worker pools on
+# macOS. Set these before NumPy, scikit-learn, or PyTorch load native runtimes.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 import joblib
 import numpy as np
@@ -52,11 +58,22 @@ def get_confidence(model, features, prediction):
     classes = np.asarray(model.classes_)
     class_index = int(np.flatnonzero(classes == prediction)[0])
     if hasattr(model, "predict_proba"):
-        return float(model.predict_proba(features)[0, class_index])
+        probabilities = np.asarray(model.predict_proba(features), dtype=float)
+        if probabilities.ndim == 2 and probabilities.shape[1] == len(classes):
+            return float(probabilities[0, class_index])
 
     scores = np.asarray(model.decision_function(features), dtype=float)
-    if scores.ndim == 1:  # Binary SVC: positive margin corresponds to classes_[1].
-        scores = np.array([-scores[0], scores[0]])
+    if scores.ndim == 1:
+        if len(classes) == 2:  # Binary SVC: positive margin corresponds to classes_[1].
+            scores = np.array([[-scores[0], scores[0]]])
+        else:
+            scores = scores.reshape(1, -1)
+    if scores.shape[1] != len(classes):
+        raise ValueError(
+            "decision_function output does not match the estimator's classes; "
+            "cannot calculate confidence."
+        )
+    scores = scores[0]
     scores -= scores.max()
     probabilities = np.exp(scores) / np.exp(scores).sum()
     return float(probabilities[class_index])
