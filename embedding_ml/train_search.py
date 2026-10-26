@@ -17,10 +17,10 @@ from common import (CLASSIFIERS, EMBEDDINGS, calculate_metrics, load_split,
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--csv", type=Path, default=Path("data/embedding_csv/embeddings_v2.csv"))
-    parser.add_argument("--model-dir", type=Path, default=Path("embedding_ml/outputs/models_v2"))
-    parser.add_argument("--results-file", type=Path, default=Path("embedding_ml/outputs/all_results_v2.txt"))
-    parser.add_argument("--n-iter", type=int, default=15)
+    parser.add_argument("--csv", type=Path, default=Path("data/embedding_csv/embeddings_v3.csv"))
+    parser.add_argument("--model-dir", type=Path, default=Path("embedding_ml/outputs/models_v3"))
+    parser.add_argument("--results-file", type=Path, default=Path("embedding_ml/outputs/all_results_v3.txt"))
+    parser.add_argument("--n-iter", type=int, default=12)
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
 

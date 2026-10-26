@@ -10,8 +10,12 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from config import (CLASS_NAMES, IMAGE_SIZE, IMAGENET_MEAN, IMAGENET_STD,
-                    LABEL_TO_ID, ROOT)
+try:  # Support both `python deep_learning/train.py` and package imports.
+    from .config import (CLASS_NAMES, IMAGE_SIZE, IMAGENET_MEAN, IMAGENET_STD,
+                         LABEL_TO_ID, ROOT)
+except ImportError:  # pragma: no cover - direct script entry points.
+    from config import (CLASS_NAMES, IMAGE_SIZE, IMAGENET_MEAN, IMAGENET_STD,
+                        LABEL_TO_ID, ROOT)
 
 CSV_PATH = ROOT / "data/train_test_split/labels_split_unk3000.csv"
 IMAGE_ROOT = ROOT / "data/dataset_6class_crops_v2"

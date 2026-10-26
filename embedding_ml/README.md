@@ -1,23 +1,39 @@
-# Image embedding classification
+# Pipeline phân loại bằng image embedding
 
-Hướng dẫn này mô tả luồng hiện tại: trích embedding từ ảnh, tìm classifier tốt
-nhất trên validation, đánh giá trên test, rồi dùng model đã lưu để dự đoán ảnh.
-Các lệnh bên dưới chạy từ thư mục gốc của project.
+Chạy các lệnh từ thư mục gốc của project. Pipeline gồm ba bước: tạo embedding,
+tìm classifier bằng train/validation và dự đoán ảnh mới.
 
-## 1. Chuẩn bị dữ liệu và trích embedding
+## 1. Trích xuất đặc trưng (Embedding)
 
-Mặc định, `extract_embedding.py` đọc danh sách ảnh từ
-`data/train_test_split/labels_split_unk3000.csv`. CSV cần có ba cột:
+Ảnh crop được chia theo manifest cố định
+`data/train_test_split/labels_split_unk3000.csv` thành các tập `train`, `val`
+và `test`, với sáu lớp tương tác người–vật. Tiền xử lý đầu vào giống pipeline
+deep learning: áp dụng hướng EXIF, chuyển ảnh sang RGB, resize giữ nguyên tỷ lệ,
+padding giữa nền đen thành ảnh vuông `224×224`, rồi chuẩn hóa theo mean và độ
+lệch chuẩn ImageNet. Không áp dụng tăng cường dữ liệu.
 
-- `crop_path`: đường dẫn ảnh tương đối với thư mục `--data-dir`.
-- `label`: tên lớp.
-- `split`: một trong `train`, `val`, `test`.
+Dùng hai CNN pretrained trên ImageNet làm bộ trích xuất đặc trưng. Trọng số được
+giữ nguyên và đóng băng; lớp phân loại cuối được thay bằng phép đồng nhất để lấy
+vector sau global average pooling. Vì vậy backbone chỉ dùng để suy luận đặc
+trưng, không được huấn luyện lại.
 
-Mặc định `--data-dir` là `data/dataset_6class_crops_v2`. Ví dụ, nếu
-`crop_path` là `unknown/example.jpg`, ảnh cần nằm tại
-`data/dataset_6class_crops_v2/unknown/example.jpg`.
+| Mô hình trích xuất | Đặc trưng | Số chiều | Thông tin biểu diễn |
+| --- | --- | ---: | --- |
+| ResNet50 | Vector sau global average pooling (`layer4`/`avgpool`) | 2.048 | Đặc trưng ngữ nghĩa mức cao, tổng hợp thông tin hình dạng, đường viền và kết cấu từ các tầng trước. |
+| EfficientNet-B0 | Vector sau global average pooling (đầu ra `features`/`avgpool`, trước classifier) | 1.280 | Đặc trưng ngữ nghĩa mức cao với vector gọn; kiến trúc MBConv và compound scaling giúp cân bằng hiệu quả tính toán. |
 
-Chạy trích xuất cả ba backbone:
+Các vector được lưu trong CSV cùng nhãn, `label_id` và tập dữ liệu tương ứng
+(`train`, `val`, `test`). Embedding là đầu vào cho các mô hình học máy ở bước
+tiếp theo.
+
+Đầu vào mặc định:
+
+- CSV split: `data/train_test_split/labels_split_unk3000.csv`, gồm các cột
+  `crop_path`, `label`, `split` (`train`, `val`, `test`).
+- Thư mục ảnh: `data/dataset_6class_crops_v2/`. `crop_path` là đường dẫn tương
+  đối bên trong thư mục này; ví dụ `unknown/example.jpg`.
+
+Chạy trích xuất cho cả ResNet50 và EfficientNet-B0:
 
 ```bash
 python embedding_ml/extract_embedding.py \
@@ -28,85 +44,46 @@ python embedding_ml/extract_embedding.py \
   --device auto
 ```
 
-Kết quả là `data/embedding_csv/embeddings_v2.csv`, mỗi dòng ứng với một ảnh.
-CSV có metadata ảnh, nhãn, split và ba cột vector JSON:
-`resnet50_embedding`, `efficientnet_b0_embedding`, `vit_b_16_embedding`.
-Lần chạy đầu có thể cần tải pretrained weights của torchvision. `auto` chọn
-MPS, CUDA hoặc CPU; có thể chỉ định thiết bị bằng `--device`. Có thể giảm batch
-nếu thiếu bộ nhớ hoặc chỉ trích một số backbone:
+Kết quả được ghi vào `data/embedding_csv/embeddings_v3.csv`. Mỗi ảnh có vector
+`resnet50_embedding` và `efficientnet_b0_embedding`. Dùng `--device cpu` nếu
+muốn chạy trên CPU; giảm `--batch-size` nếu thiếu bộ nhớ. Lần chạy đầu có thể
+cần tải ImageNet weights của torchvision.
 
-```bash
-python embedding_ml/extract_embedding.py --models resnet50 vit_b_16 --batch-size 16 --device cpu
-```
+Việc trích embedding và dự đoán dùng cùng transform từ
+`deep_learning/data.py`, đảm bảo tiền xử lý nhất quán.
 
-`--preprocessing weights` là mặc định và dùng transform tương ứng với weights
-của mỗi backbone. Giữ nguyên thiết lập này khi chạy dự đoán để preprocessing
-khớp với embedding dùng lúc train.
+## 2. Tìm và lưu classifier
 
-## 2. Train, chọn model và xem kết quả
-
-Chạy tìm tham số cho ba backbone và bốn classifier (12 tổ hợp):
-
-```bash
-python embedding_ml/train_search.py
-```
-
-Mặc định script đọc `data/embedding_csv/embeddings_v2.csv`. Mỗi search fit
-từng cấu hình đúng một lần trên train và chọn model có macro-F1 cao nhất trên
-validation. Chính model đó được dùng để đánh giá train, validation, test và
-được lưu; test không tham gia chọn model.
-
-Mặc định, các file được lưu ở:
-
-- `models_v2/<backbone>_<classifier>.joblib`: 12 model và metadata gồm tên
-  backbone, classifier, nhãn và tham số đã chọn. Model đã tồn tại sẽ được bỏ qua.
-- `all_results_v2.txt`: tham số tốt nhất, metric và classification report theo
-  từng lớp cho train, validation và test.
-
-Có thể đổi CSV đầu vào, thư mục model, file kết quả, số lần lấy mẫu ngẫu nhiên
-và seed:
+Sau khi tạo CSV embedding, chạy:
 
 ```bash
 python embedding_ml/train_search.py \
-  --csv data/embedding_csv/embeddings_v2.csv \
-  --model-dir embedding_ml/outputs/models_v2 \
-  --results-file embedding_ml/outputs/all_results_v2.txt \
-  --n-iter 15 \
+  --csv data/embedding_csv/embeddings_v3.csv \
+  --model-dir embedding_ml/outputs/models_v3 \
+  --results-file embedding_ml/outputs/all_results_v3.txt \
+  --n-iter 12 \
   --seed 42
 ```
 
-Hai đường dẫn `--model-dir` và `--results-file` ở trên cũng là giá trị mặc
-định, nên có thể bỏ chúng nếu muốn lưu ở vị trí mặc định.
+Script tìm cấu hình cho hai backbone và bốn classifier. Mỗi cấu hình được fit
+trên train; chọn cấu hình có macro-F1 cao nhất trên validation. Test chỉ dùng
+để báo cáo kết quả cuối, không dùng để chọn cấu hình. Model và kết quả được lưu
+trong hai đường dẫn đã chỉ định. Dùng thư mục/tên file v3 để giữ riêng
+kết quả của lần chạy với preprocessing này; script bỏ qua model nếu file đó đã
+tồn tại.
 
-## 3. Dự đoán một hoặc nhiều ảnh
+## 3. Dự đoán ảnh
 
-Chọn file model cụ thể, sau đó truyền một hoặc nhiều ảnh:
+Chọn một file model đã lưu và truyền một hoặc nhiều ảnh:
 
 ```bash
 python embedding_ml/predict.py \
-  embedding_ml/outputs/models_v2/resnet50_logreg.joblib \
-  path/to/image.jpg path/to/another_image.jpg
+  embedding_ml/outputs/models_v3/resnet50_logreg.joblib \
+  path/to/image.jpg path/to/another_image.jpg \
+  --device auto \
+  --batch-size 16
 ```
 
-Mỗi ảnh cho một dòng JSON gồm `image_path`, `label_id`, `label`, `confidence`
-và `model_name`. Thứ tự kết quả khớp với thứ tự ảnh đầu vào. Có thể đổi thiết
-bị bằng `--device cpu|cuda|mps|auto` và kích thước batch bằng `--batch-size`.
-
-Dùng từ Python cũng trả về một chuỗi JSON Lines:
-
-```python
-from embedding_ml.predict import predict
-
-result = predict(
-    "embedding_ml/outputs/models_v2/resnet50_logreg.joblib",
-    ["path/to/image.jpg", "path/to/another_image.jpg"],
-)
-print(result)
-```
-
-Tham số ảnh cũng có thể là một chuỗi đơn nếu chỉ dự đoán một ảnh.
-
-Logistic regression, random forest và XGBoost cung cấp confidence từ
-`predict_proba`. SVM hiện được train không bật hiệu chuẩn xác suất; confidence
-của SVM được tính bằng softmax trên decision scores và nên hiểu là điểm tin
-cậy tương đối, không phải xác suất đã hiệu chuẩn.
+Kết quả in ra JSON Lines theo thứ tự ảnh đầu vào, gồm `image_path`, `label_id`,
+`label`, `confidence` và `model_name`. Với SVM, `confidence` được tính từ
+decision scores và không phải xác suất đã hiệu chuẩn.

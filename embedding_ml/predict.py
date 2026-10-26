@@ -14,7 +14,7 @@ os.environ.setdefault("MKL_NUM_THREADS", "1")
 import joblib
 import numpy as np
 import torch
-from PIL import Image
+from PIL import Image, ImageOps
 
 try:  # Support both `python embedding_ml/predict.py` and package imports.
     from .common import EMBEDDINGS
@@ -35,14 +35,14 @@ def parse_args():
 
 def extract_images(image_paths, embedding, device, batch_size):
     """Extract one backbone's feature vectors for a list of images."""
-    feature_model, transform, _ = build_model_and_transform(embedding, preprocessing="weights")
+    feature_model, transform, _ = build_model_and_transform(embedding)
     feature_model = feature_model.to(device).eval()
     batches = []
     for start in range(0, len(image_paths), batch_size):
         tensors = []
         for path in image_paths[start:start + batch_size]:
             with Image.open(path) as image:
-                tensors.append(transform(image.convert("RGB")))
+                tensors.append(transform(ImageOps.exif_transpose(image).convert("RGB")))
         images = torch.stack(tensors)
         batches.append(extract_batch_embeddings(feature_model, images, embedding, device).numpy())
     del feature_model
