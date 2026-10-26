@@ -87,3 +87,20 @@ python embedding_ml/predict.py \
 Kết quả in ra JSON Lines theo thứ tự ảnh đầu vào, gồm `image_path`, `label_id`,
 `label`, `confidence` và `model_name`. Với SVM, `confidence` được tính từ
 decision scores và không phải xác suất đã hiệu chuẩn.
+
+## 4. Ma trận nhầm lẫn trên test
+
+Để đánh giá model ResNet50 + XGBoost bằng embedding đã lưu (không trích xuất lại
+đặc trưng từ ảnh), chạy từ thư mục gốc project:
+
+```bash
+python embedding_ml/confusion_matrix.py
+```
+
+Mặc định script đọc `embedding_ml/outputs/models_v3/resnet50_xgboost.joblib`,
+lấy các dòng `test` và cột `resnet50_embedding` từ
+`data/embedding_csv/embeddings_v3.csv`, rồi lưu hình tại
+`embedding_ml/outputs/confusion_matrix_resnet50_xgboost_test.png`. Báo cáo
+precision/recall/F1 và ma trận số cũng được in ra terminal. Có thể truyền đường
+dẫn khác bằng `--model`, `--csv` và `--output`; thêm `--normalize true` để hiển
+thị tỷ lệ theo từng nhãn thật.

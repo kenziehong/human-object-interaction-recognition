@@ -55,6 +55,22 @@ python deep_learning/random_search.py --setups th2 --backbones resnet50 --config
 
 Mỗi run được lưu trong `deep_learning/outputs/`, gồm `config.json`, `training.txt`, `history.csv`, `metrics.json`, `report.txt` và `best.pt`. `results_summary.txt` tổng hợp các run; random search tạo thêm `random_search_summary.txt`. Run cũ không bị ghi đè.
 
+## Ma trận nhầm lẫn trên test
+
+Tạo ma trận nhầm lẫn cho checkpoint ResNet50 th2 mặc định bằng split test trong
+CSV và ảnh crop gốc:
+
+```bash
+python deep_learning/confusion_matrix.py
+```
+
+Mặc định dùng `deep_learning/outputs/resnet50_th2/resnet50_th2_seed42_03/best.pt`
+và `data/train_test_split/labels_split_unk3000.csv`, rồi lưu
+`confusion_matrix_test.png` cạnh checkpoint. Script dùng cùng preprocessing với
+pipeline train và in classification report cùng ma trận số ra terminal. Có thể
+đổi đầu vào bằng `--model`, `--csv`, `--image-root`, `--output`; thêm
+`--normalize true` để chuẩn hóa theo từng nhãn thật.
+
 Có thể đánh giá test run riêng sau khi khóa:
 
 ```bash
