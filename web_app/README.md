@@ -1,6 +1,6 @@
 # web_app: demo web nhận diện hành động người–vật
 
-Web chạy cục bộ, 3 bước: **Tải ảnh lên → Xử lý ảnh → Dự đoán**.
+Web chạy cục bộ, 3 bước: **Tải ảnh lên → Tiền xử lý ảnh → Dự đoán**.
 
 ```
 ảnh gốc ──DP-HOI──► khung người + vật ──cắt crop──► CLIP ViT-B/32 + SVM ──► 1 trong 6 lớp
@@ -77,6 +77,17 @@ python3 app.py
 - Tuỳ chọn: `python3 app.py --port 8080` (đổi cổng), `python3 app.py --cpu` (ép DP-HOI chạy CPU).
 
 Không cần cài `clip` của OpenAI như README của DP-HOI yêu cầu: gói đó chỉ dùng lúc pre-train, `dphoi_detector.py` đã thay nó bằng module rỗng.
+
+## Thời gian hiển thị trên web
+
+Số giây ở bước 2 và bước 3 (ví dụ `2 crop đã phân loại · 0.16s`) là thời gian **server chạy mô hình**, đo từ lúc server nhận được yêu cầu đến lúc có kết quả. **Không** tính thời gian gửi ảnh qua mạng và thời gian trình duyệt vẽ kết quả.
+
+| Bước | Tính những gì |
+|---|---|
+| 2. Tiền xử lý ảnh | đọc ảnh → DP-HOI tìm người + vật → cắt crop (không tính bước vẽ khung lên ảnh) |
+| 3. Dự đoán | CLIP trích embedding → SVM phân loại, cho **tất cả crop cùng lúc** (không phải thời gian của từng crop) |
+
+Lần bấm đầu tiên sau khi bật server thường chậm hơn các lần sau. Lý do **không phải** do lưu kết quả (mỗi lần bấm đều chạy lại mô hình từ đầu), mà do warm-up: lần đầu PyTorch phải cấp phát bộ nhớ, khởi tạo luồng CPU và (trên Mac) biên dịch phép tính cho GPU MPS; các lần sau dùng lại nên chỉ còn thời gian tính toán thật.
 
 ## Cách cắt crop
 

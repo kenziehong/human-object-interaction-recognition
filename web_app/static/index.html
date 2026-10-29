@@ -116,8 +116,8 @@
   </div>
   <div class="step" id="s2">
     <div class="num">2</div>
-    <div class="txt"><b>Xử lý ảnh</b><span id="s2t">Tìm người + vật, cắt crop</span></div>
-    <button id="btnProcess" disabled>Xử lý ảnh</button>
+    <div class="txt"><b>Tiền xử lý ảnh</b><span id="s2t">Tìm người + vật, cắt crop</span></div>
+    <button id="btnProcess" disabled>Tiền xử lý ảnh</button>
   </div>
   <div class="step" id="s3">
     <div class="num">3</div>
@@ -153,7 +153,7 @@
 
   <section class="panel">
     <div class="panel-head"><h2 id="resTitle">Kết quả</h2></div>
-    <div id="results"><div class="empty">Tải ảnh lên rồi bấm <b>Xử lý ảnh</b> để xem các vùng người được cắt ra.</div></div>
+    <div id="results"><div class="empty">Tải ảnh lên rồi bấm <b>Tiền xử lý ảnh</b> để xem các vùng người được cắt ra.</div></div>
   </section>
 </main>
 
@@ -188,7 +188,7 @@ function setFile(f) {
   $('btnUpload').textContent = 'Đổi ảnh'; $('btnUpload').className = 'btn ghost';
   $('btnProcess').disabled = false; $('btnPredict').disabled = true;
   $('resTitle').textContent = 'Kết quả';
-  $('results').innerHTML = '<div class="empty">Bấm <b>Xử lý ảnh</b> để tìm người và vật.</div>';
+  $('results').innerHTML = '<div class="empty">Bấm <b>Tiền xử lý ảnh</b> để tìm người và vật.</div>';
   status('');
 }
 
@@ -207,13 +207,13 @@ async function processImage() {
     Object.assign(st, { phien: j.phien, crops: j.crops, urlVe: j.anh_ve });
     $('tabs').hidden = false; show('ve');
     $('meta').textContent = `${st.file.name} · ${j.kich_thuoc[0]}×${j.kich_thuoc[1]} px · ${j.crops.length} người, ${j.so_vat} vật · ${j.thoi_gian}s`;
-    $('s2t').textContent = `${j.crops.length} người, ${j.so_vat} vật`;
+    $('s2t').textContent = `${j.crops.length} người, ${j.so_vat} vật · ${j.thoi_gian}s`;
     done(2, true); done(3, false);
     renderCards(null);
     $('btnPredict').disabled = j.crops.length === 0;
     status(j.crops.length ? 'Đã cắt xong. Bấm <b>Dự đoán</b> để phân loại.' : 'Không tìm thấy người nào trong ảnh (ngưỡng 0.7).',
            j.crops.length ? '' : 'err');
-  } catch (e) { status('Lỗi khi xử lý ảnh: ' + esc(e.message), 'err'); }
+  } catch (e) { status('Lỗi khi tiền xử lý ảnh: ' + esc(e.message), 'err'); }
   $('btnProcess').disabled = false; $('btnUpload').classList.remove('off');
 }
 
@@ -224,8 +224,8 @@ async function predict() {
     const j = await post('/api/du-doan', JSON.stringify({ phien: st.phien }), 'application/json');
     renderCards(j.ket_qua);
     done(3, true);
-    $('s3t').textContent = j.ket_qua.length === 1 ? j.ket_qua[0].lop : `${j.ket_qua.length} crop đã phân loại`;
-    status(`Xong trong ${j.thoi_gian}s.`);
+    $('s3t').textContent = (j.ket_qua.length === 1 ? j.ket_qua[0].lop : `${j.ket_qua.length} crop đã phân loại`) + ` · ${j.thoi_gian}s`;
+    status(`Dự đoán xong trong ${j.thoi_gian}s.`);
   } catch (e) { status('Lỗi khi dự đoán: ' + esc(e.message), 'err'); }
   $('btnPredict').disabled = $('btnProcess').disabled = false; $('btnUpload').classList.remove('off');
 }

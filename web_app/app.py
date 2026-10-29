@@ -157,7 +157,7 @@ def b64(img, max_canh=1280):
     return 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode()
 
 
-PHIEN = {}   # id phiên → danh sách crop PIL của lần xử lý ảnh gần nhất
+PHIEN = {}   # id phiên → danh sách crop PIL của lần tiền xử lý ảnh gần nhất
 MAX_PHIEN = 30
 
 
@@ -220,7 +220,7 @@ class Handler(BaseHTTPRequestHandler):
     def du_doan(self, body):
         crops = PHIEN.get(body.get('phien'))
         if crops is None:
-            raise ValueError('phiên đã hết hạn, hãy bấm "Xử lý ảnh" lại')
+            raise ValueError('phiên đã hết hạn, hãy bấm "Tiền xử lý ảnh" lại')
         if not crops:
             return {'ket_qua': [], 'thoi_gian': 0}
         t = time.time()
