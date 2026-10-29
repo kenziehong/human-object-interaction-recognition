@@ -11,9 +11,9 @@ vì vậy không cần cài CLIP và chạy được trên CPU / Apple MPS (code
 
 Cần: pip install -r requirements.txt
 
-    python dphoi_detector.py anh.jpg                      # cắt mọi người, lưu vào crops_dphoi/
-    python dphoi_detector.py thu_muc_anh/ --out ket_qua/ --ve
-    python dphoi_detector.py anh.jpg --mot-nguoi          # chỉ lấy 1 người chính
+    python3 dphoi_detector.py anh.jpg                      # cắt mọi người, lưu vào crops_dphoi/
+    python3 dphoi_detector.py thu_muc_anh/ --out ket_qua/ --ve
+    python3 dphoi_detector.py anh.jpg --mot-nguoi          # chỉ lấy 1 người chính
 
 Dùng trong code (trước mô hình phân loại):
     from dphoi_detector import CatNguoi

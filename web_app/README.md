@@ -11,7 +11,7 @@ Web chạy cục bộ, 3 bước: **Tải ảnh lên → Xử lý ảnh → Dự
 ## Cấu trúc
 
 ```
-web_infer/
+web_app/
 ├── app.py               server (thư viện chuẩn http.server) + logic cắt crop
 ├── dphoi_detector.py    dựng DETR của DP-HOI, chỉ dùng nhánh detection, chạy được CPU / Apple MPS
 ├── clip_svm.py          embedding CLIP + SVM (tiền xử lý giống lúc train)
@@ -26,20 +26,57 @@ web_infer/
 
 ## Cài đặt và chạy
 
+Cần: **Python 3.9 – 3.12** (đã chạy thử với 3.9) và **git**.
+
+> Trên macOS/Linux, lệnh Python thường là `python3` (gõ `python` có thể báo `command not found`).
+> Trên Windows, dùng `py` thay cho `python3`.
+
+**Bước 1. Tạo môi trường ảo** (chỉ làm 1 lần)
+
 ```bash
-cd web_infer
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-bash scripts/setup.sh        # clone DP-HOI + tải checkpoint ResNet50 (161 MB, Google Drive)
-python app.py                # mở http://localhost:8000   (--port 8080, --cpu)
+cd web_app
+python3 -m venv .venv
 ```
 
-`setup.sh` làm 2 việc (có thể tự làm tay):
+**Bước 2. Kích hoạt môi trường ảo** (làm lại mỗi khi mở terminal mới)
+
+```bash
+source .venv/bin/activate        # macOS / Linux
+.venv\Scripts\activate           # Windows
+```
+
+Kích hoạt xong, đầu dòng terminal hiện `(.venv)`.
+
+**Bước 3. Cài thư viện** (chỉ làm 1 lần)
+
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+**Bước 4. Tải DP-HOI và checkpoint** (chỉ làm 1 lần, cần làm sau bước 3 vì dùng `gdown`)
+
+```bash
+bash scripts/setup.sh
+```
+
+Script này làm 2 việc. Nếu làm không được thì tự làm tay:
 
 1. `git clone https://github.com/xingaoli/DP-HOI.git third_party/DP-HOI`
-2. Tải [checkpoint pre-train DP-HOI ResNet50](https://drive.google.com/file/d/1DYBY8wHDGDPh9pyvxBewTqmpbztAzazb/view) về `weights/dphoi_res50_3layers.pth`
+2. Tải [checkpoint pre-train DP-HOI ResNet50](https://drive.google.com/file/d/1DYBY8wHDGDPh9pyvxBewTqmpbztAzazb/view) (161 MB) về `weights/dphoi_res50_3layers.pth`
 
-Không cần cài `clip` của OpenAI mà DP-HOI yêu cầu: nhánh caption chỉ dùng lúc pre-train, `dphoi_detector.py` thay module đó bằng module rỗng.
+**Bước 5. Chạy web**
+
+```bash
+python3 app.py
+```
+
+Đợi terminal hiện `Sẵn sàng: http://127.0.0.1:8000` rồi mở link đó bằng trình duyệt. Tắt server: `Ctrl + C`.
+
+- Lần chạy đầu tiên sẽ tự tải trọng số CLIP ViT-B/32 (khoảng 600 MB) từ Hugging Face, nên lâu hơn các lần sau.
+- DP-HOI tự chạy trên GPU nếu có (CUDA, hoặc Apple Silicon qua MPS), không có thì chạy CPU.
+- Tuỳ chọn: `python3 app.py --port 8080` (đổi cổng), `python3 app.py --cpu` (ép DP-HOI chạy CPU).
+
+Không cần cài `clip` của OpenAI như README của DP-HOI yêu cầu: gói đó chỉ dùng lúc pre-train, `dphoi_detector.py` đã thay nó bằng module rỗng.
 
 ## Cách cắt crop
 

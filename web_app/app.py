@@ -17,8 +17,8 @@ Cách cắt: 3 quy tắc, mỗi quy tắc có một lý do
         detector bỏ sót (điện thoại nhỏ, cốc bị che...).
 
 Chạy (sau khi cài theo README.md):
-    python app.py                  # mở http://localhost:8000
-    python app.py --port 8080 --cpu
+    python3 app.py                  # mở http://localhost:8000
+    python3 app.py --port 8080 --cpu
 """
 import argparse, base64, io, json, math, os, sys, threading, time, uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
