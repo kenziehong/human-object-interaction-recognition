@@ -1,0 +1,6 @@
+# Tải về bằng scripts/setup.sh, không đưa lên repo
+third_party/DP-HOI
+weights/dphoi_res50_3layers.pth
+__pycache__/
+.DS_Store
+.venv/

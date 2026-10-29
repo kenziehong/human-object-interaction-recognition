@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nhận diện hành động người–vật</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --panel: #ffffff; --ink: #1c2128; --muted: #667080; --line: #e2e5ea;
+    --accent: #2f6fed; --accent-ink: #ffffff; --soft: #eef3fe;
+    --person: #e6283c; --object: #1ea0ff; --crop: #f5b400; --ok: #1a7f37; --err: #cf222e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111418; --panel: #1a1e24; --ink: #e6e9ee; --muted: #9aa3b0; --line: #2b313a;
+            --accent: #5b8ff9; --soft: #1f2a3f; }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 20px 24px 0; max-width: 1280px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 2px; }
+  header p { margin: 0; color: var(--muted); font-size: 13px; }
+
+  /* Thanh 3 bước */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 1280px;
+           margin: 16px auto; padding: 0 24px; }
+  .step { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+          display: flex; align-items: center; gap: 12px; }
+  .step .num { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none;
+               background: var(--soft); color: var(--accent); font-weight: 700; font-size: 14px; }
+  .step.done .num { background: var(--ok); color: #fff; }
+  .step .txt { flex: 1; min-width: 0; }
+  .step .txt b { display: block; font-size: 14px; }
+  .step .txt span { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden;
+                    text-overflow: ellipsis; }
+  button, .btn { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer;
+           background: var(--accent); color: var(--accent-ink); white-space: nowrap; }
+  button:disabled, .btn.off { opacity: .4; cursor: not-allowed; pointer-events: none; }
+  .ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+
+  /* Bố cục chính */
+  main { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; max-width: 1280px;
+         margin: 0 auto 32px; padding: 0 24px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+           min-height: 420px; }
+  .panel h2 { font-size: 15px; margin: 0; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px;
+                min-height: 32px; }
+  .tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .tabs button { background: transparent; color: var(--muted); border-radius: 0; padding: 5px 12px; font-size: 13px; }
+  .tabs button.on { background: var(--soft); color: var(--accent); }
+
+  .drop { border: 2px dashed var(--line); border-radius: 10px; min-height: 360px; display: grid; place-items: center;
+          text-align: center; color: var(--muted); cursor: pointer; transition: .15s; }
+  .drop.hover { border-color: var(--accent); background: var(--soft); }
+  .drop .big { font-size: 15px; color: var(--ink); font-weight: 600; }
+  .viewer img { display: block; width: 100%; max-height: 70vh; object-fit: contain; border-radius: 8px;
+                background: repeating-conic-gradient(var(--line) 0 25%, transparent 0 50%) 0 0 / 16px 16px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+  .legend i { display: inline-block; width: 14px; height: 10px; border: 2px solid; border-radius: 2px;
+              margin-right: 5px; vertical-align: -1px; }
+  .meta { margin-top: 6px; font-size: 12px; color: var(--muted); }
+  .tag.drop-obj { background: transparent; border: 1px dashed var(--muted); color: var(--muted); font-weight: 500;
+                  text-decoration: line-through; }
+
+  .empty { color: var(--muted); text-align: center; padding: 80px 20px; font-size: 14px; }
+  .cards { display: flex; flex-direction: column; gap: 12px; }
+  .card { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 14px; border: 1px solid var(--line);
+          border-radius: 10px; padding: 10px; }
+  .card img { width: 140px; height: 170px; object-fit: contain; border-radius: 6px; background: var(--bg); }
+  .card .top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--soft); color: var(--accent);
+         font-weight: 600; }
+  .tag.obj { background: transparent; border: 1px solid var(--object); color: var(--object); font-weight: 500; }
+  .pred { margin-top: 8px; }
+  .pred .label { font-size: 18px; font-weight: 700; }
+  .pred .code { color: var(--muted); font-size: 12px; margin-left: 6px; font-family: ui-monospace, monospace; }
+  .bars { margin-top: 6px; display: grid; grid-template-columns: 112px minmax(0, 1fr) 44px; gap: 3px 8px;
+          font-size: 12px; align-items: center; }
+  .bars .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+  .bars .bar div { height: 100%; background: var(--muted); border-radius: 4px; }
+  .bars .best { font-weight: 700; color: var(--ink); }
+  .bars .best + .bar div { background: var(--accent); }
+  .bars .v { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .waiting { margin-top: 10px; font-size: 13px; color: var(--muted); }
+
+  .status { max-width: 1280px; margin: -4px auto 12px; padding: 0 24px; font-size: 13px; min-height: 20px;
+            color: var(--muted); }
+  .status.err { color: var(--err); }
+  .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--accent);
+          border-radius: 50%; animation: s .8s linear infinite; vertical-align: -2px; margin-right: 6px; }
+  @keyframes s { to { transform: rotate(360deg); } }
+
+  @media (max-width: 900px) {
+    .steps, main { grid-template-columns: 1fr; padding: 0 16px; }
+    header, .status { padding-left: 16px; padding-right: 16px; }
+  }
+  @media (max-width: 480px) {
+    .card { grid-template-columns: 1fr; }
+    .card img { width: 100%; height: 220px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Nhận diện hành động người–vật</h1>
+  <p>DP-HOI tìm người + vật → cắt vùng người (kèm vật) → CLIP ViT-B/32 + SVM phân loại 6 lớp</p>
+</header>
+
+<section class="steps">
+  <div class="step" id="s1">
+    <div class="num">1</div>
+    <div class="txt"><b>Tải ảnh lên</b><span id="s1t">JPG, PNG, WEBP</span></div>
+    <label for="file" class="btn" id="btnUpload">Chọn ảnh</label>
+  </div>
+  <div class="step" id="s2">
+    <div class="num">2</div>
+    <div class="txt"><b>Xử lý ảnh</b><span id="s2t">Tìm người + vật, cắt crop</span></div>
+    <button id="btnProcess" disabled>Xử lý ảnh</button>
+  </div>
+  <div class="step" id="s3">
+    <div class="num">3</div>
+    <div class="txt"><b>Dự đoán</b><span id="s3t">Phân loại từng crop</span></div>
+    <button id="btnPredict" disabled>Dự đoán</button>
+  </div>
+</section>
+<div class="status" id="status"></div>
+
+<main>
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Ảnh</h2>
+      <div class="tabs" id="tabs" hidden>
+        <button data-v="goc" class="on">Ảnh gốc</button>
+        <button data-v="ve">Khung phát hiện</button>
+      </div>
+    </div>
+    <label class="drop" id="drop" for="file">
+      <div><div class="big">Kéo thả ảnh vào đây</div><div>hoặc bấm để chọn file</div></div>
+    </label>
+    <div class="viewer" id="viewer" hidden>
+      <img id="img" alt="Ảnh đầu vào">
+      <div class="legend" id="legend" hidden>
+        <span><i style="border-color:var(--person)"></i>Người</span>
+        <span><i style="border-color:var(--object)"></i>Vật</span>
+        <span><i style="border-color:var(--crop)"></i>Vùng cắt</span>
+      </div>
+      <div class="meta" id="meta"></div>
+    </div>
+    <input type="file" id="file" accept="image/*" hidden>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2 id="resTitle">Kết quả</h2></div>
+    <div id="results"><div class="empty">Tải ảnh lên rồi bấm <b>Xử lý ảnh</b> để xem các vùng người được cắt ra.</div></div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const st = { file: null, urlGoc: null, urlVe: null, phien: null, crops: [] };
+
+function status(msg, kind) {
+  const el = $('status');
+  el.className = 'status' + (kind === 'err' ? ' err' : '');
+  el.innerHTML = kind === 'busy' ? '<span class="spin"></span>' + msg : msg;
+}
+function done(step, on) { $('s' + step).classList.toggle('done', on); }
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function show(v) {
+  $('img').src = v === 've' ? st.urlVe : st.urlGoc;
+  $('legend').hidden = v !== 've';
+  for (const b of $('tabs').children) b.classList.toggle('on', b.dataset.v === v);
+}
+
+function setFile(f) {
+  if (!f || !f.type.startsWith('image/')) return status('File không phải ảnh.', 'err');
+  if (st.urlGoc) URL.revokeObjectURL(st.urlGoc);
+  Object.assign(st, { file: f, urlGoc: URL.createObjectURL(f), urlVe: null, phien: null, crops: [] });
+  $('drop').hidden = true; $('viewer').hidden = false; $('tabs').hidden = true;
+  $('meta').textContent = `${f.name} · ${(f.size / 1024).toFixed(0)} KB`;
+  show('goc');
+  $('s1t').textContent = f.name;
+  $('s2t').textContent = 'Tìm người + vật, cắt crop'; $('s3t').textContent = 'Phân loại từng crop';
+  done(1, true); done(2, false); done(3, false);
+  $('btnUpload').textContent = 'Đổi ảnh'; $('btnUpload').className = 'btn ghost';
+  $('btnProcess').disabled = false; $('btnPredict').disabled = true;
+  $('resTitle').textContent = 'Kết quả';
+  $('results').innerHTML = '<div class="empty">Bấm <b>Xử lý ảnh</b> để tìm người và vật.</div>';
+  status('');
+}
+
+async function post(url, body, type) {
+  const r = await fetch(url, { method: 'POST', body, headers: { 'Content-Type': type } });
+  const j = await r.json().catch(() => ({ loi: 'Phản hồi không hợp lệ từ server' }));
+  if (!r.ok) throw new Error(j.loi || r.statusText);
+  return j;
+}
+
+async function processImage() {
+  $('btnProcess').disabled = $('btnPredict').disabled = true; $('btnUpload').classList.add('off');
+  status('Đang chạy DP-HOI…', 'busy');
+  try {
+    const j = await post('/api/xu-ly', st.file, st.file.type);
+    Object.assign(st, { phien: j.phien, crops: j.crops, urlVe: j.anh_ve });
+    $('tabs').hidden = false; show('ve');
+    $('meta').textContent = `${st.file.name} · ${j.kich_thuoc[0]}×${j.kich_thuoc[1]} px · ${j.crops.length} người, ${j.so_vat} vật · ${j.thoi_gian}s`;
+    $('s2t').textContent = `${j.crops.length} người, ${j.so_vat} vật`;
+    done(2, true); done(3, false);
+    renderCards(null);
+    $('btnPredict').disabled = j.crops.length === 0;
+    status(j.crops.length ? 'Đã cắt xong. Bấm <b>Dự đoán</b> để phân loại.' : 'Không tìm thấy người nào trong ảnh (ngưỡng 0.7).',
+           j.crops.length ? '' : 'err');
+  } catch (e) { status('Lỗi khi xử lý ảnh: ' + esc(e.message), 'err'); }
+  $('btnProcess').disabled = false; $('btnUpload').classList.remove('off');
+}
+
+async function predict() {
+  $('btnPredict').disabled = $('btnProcess').disabled = true; $('btnUpload').classList.add('off');
+  status('Đang trích embedding CLIP và chạy SVM…', 'busy');
+  try {
+    const j = await post('/api/du-doan', JSON.stringify({ phien: st.phien }), 'application/json');
+    renderCards(j.ket_qua);
+    done(3, true);
+    $('s3t').textContent = j.ket_qua.length === 1 ? j.ket_qua[0].lop : `${j.ket_qua.length} crop đã phân loại`;
+    status(`Xong trong ${j.thoi_gian}s.`);
+  } catch (e) { status('Lỗi khi dự đoán: ' + esc(e.message), 'err'); }
+  $('btnPredict').disabled = $('btnProcess').disabled = false; $('btnUpload').classList.remove('off');
+}
+
+function renderCards(preds) {
+  $('resTitle').textContent = `Kết quả · ${st.crops.length} người`;
+  if (!st.crops.length) { $('results').innerHTML = '<div class="empty">Không có người nào để phân loại.</div>'; return; }
+  $('results').innerHTML = '<div class="cards">' + st.crops.map((c, i) => {
+    const vat = c.vat.map(v => `<span class="tag obj">${esc(v.ten)} ${v.diem.toFixed(2)}</span>`).join('') +
+      c.vat_bo.map(v => `<span class="tag drop-obj" title="Bỏ: ${esc(v.ly_do)}">${esc(v.ten)}</span>`).join('');
+    let body = '<div class="waiting">Chưa dự đoán.</div>';
+    if (preds) {
+      const p = preds[i];
+      body = `<div class="pred"><span class="label">${esc(p.lop)}</span></div>`;
+      // Tạm ẩn thanh điểm 6 lớp (decision_function của SVM)
+      // const vals = p.diem.map(d => d.diem), lo = Math.min(...vals), hi = Math.max(...vals);
+      // body += `<div class="bars">${p.diem.slice().sort((a, b) => b.diem - a.diem).map(d => `
+      //     <span class="${d.lop === p.lop ? 'best' : ''}">${esc(d.ten_vn)}</span>
+      //     <div class="bar"><div style="width:${hi > lo ? 4 + 96 * (d.diem - lo) / (hi - lo) : 100}%"></div></div>
+      //     <span class="v">${d.diem.toFixed(2)}</span>`).join('')}</div>`;
+    }
+    return `<div class="card">
+      <img src="${c.anh}" alt="Crop người #${c.id + 1}">
+      <div>
+        <div class="top"><b>#${c.id + 1}${/* i === 0 && st.crops.length > 1 ? ' · người chính' : */ ''}</b>
+          <!-- tạm ẩn: <span class="tag">${esc(c.che_do)}</span>${vat} --></div>
+        <!-- tạm ẩn: <div class="meta">Người: ${c.nguoi_diem.toFixed(2)}</div> -->
+        ${body}
+      </div></div>`;
+  }).join('') + '</div>';
+  // + (preds ? '<div class="meta" style="margin-top:10px">Điểm = decision_function của SVM (không phải xác suất); cao hơn là khớp hơn.</div>' : '');
+}
+
+$('file').onchange = e => { setFile(e.target.files[0]); e.target.value = ''; };
+$('btnProcess').onclick = processImage;
+$('btnPredict').onclick = predict;
+$('tabs').onclick = e => { if (e.target.dataset.v && st.urlVe) show(e.target.dataset.v); };
+for (const el of [$('drop'), document.body]) {
+  el.addEventListener('dragover', e => { e.preventDefault(); $('drop').classList.add('hover'); });
+  el.addEventListener('dragleave', () => $('drop').classList.remove('hover'));
+  el.addEventListener('drop', e => { e.preventDefault(); $('drop').classList.remove('hover'); setFile(e.dataTransfer.files[0]); });
+}
+</script>
+</body>
+</html>
