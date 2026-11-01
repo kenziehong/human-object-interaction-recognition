@@ -8,6 +8,9 @@ Cách cắt: 3 quy tắc, mỗi quy tắc có một lý do
      Không dùng "giao nhiều nhất" vì khung người đứng gần camera rất to, bao luôn vật của người đứng sau.
      Bỏ vật lớn hơn 4 lần người (bàn ăn, giường, xe buýt...): đó là cảnh nền, gộp vào thì người chỉ còn
      một góc nhỏ của crop sau khi thu về 224x224.
+     Bỏ luôn đồ nội thất lớn (DO_NEN: giường, sofa, bàn ăn, ghế dài, bồn cầu) dù không to hơn 4 lần người:
+     người ngồi/nằm trên giường thì khung người to, giường chỉ to hơn người 2-3 lần nên lọt qua luật kích thước,
+     làm crop phình thành cả cái giường. Không lớp nào trong 6 lớp lấy các đồ này làm vật tương tác.
      Bỏ vật có khung chứa tâm của một người khác: đó là vật dùng chung (2 người 1 xe) hoặc detector gộp
      nhiều vật thành 1 khung (2 xe máy chạy cạnh nhau), không phải vật riêng của người này.
      Lý do: người tương tác với vật thì tay/thân phải chạm vật (cầm điện thoại, ngồi trên ngựa, gõ laptop).
@@ -35,6 +38,7 @@ import dphoi_detector as dp  # noqa: E402  (đưa third_party/DP-HOI lên sys.pa
 from clip_svm import PhanLoai  # noqa: E402
 
 NGUONG = 0.7          # quy tắc 1, giống dphoi_detector.py
+DO_NEN = {'bed', 'couch', 'dining table', 'bench', 'toilet'}   # quy tắc 2: đồ nội thất = nền, không phải vật
 VAT_TO_TOI_DA = 4.0   # quy tắc 2; quy tắc 3 nới 20% bằng dp.khung_cat (dp.PAD), giống tao_dataset_6class.py
 
 # 91 id COCO của DETR (id 0 và các id bỏ trống = 'N/A')
@@ -109,7 +113,9 @@ def tao_crop(img, nguoi, vat):
         if not cham:
             continue
         i = min(cham)[1]
-        if dien_tich(v['box']) > VAT_TO_TOI_DA * dien_tich(nguoi[i]['box']):
+        if v['ten'] in DO_NEN:
+            bo_vi_to[i].append({**v, 'ly_do': 'đồ nội thất (nền)'})
+        elif dien_tich(v['box']) > VAT_TO_TOI_DA * dien_tich(nguoi[i]['box']):
             bo_vi_to[i].append({**v, 'ly_do': 'to hơn 4 lần người'})
         elif any(k != i and chua_tam(v['box'], p['box']) for k, p in enumerate(nguoi)):
             bo_vi_to[i].append({**v, 'ly_do': 'khung vật chứa người khác'})

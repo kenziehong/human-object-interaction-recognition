@@ -30,6 +30,13 @@
   .step .num { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none;
                background: var(--soft); color: var(--accent); font-weight: 700; font-size: 14px; }
   .step.done .num { background: var(--ok); color: #fff; }
+  .step { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+  .step:hover { border-color: var(--accent); }
+  .step.cur { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); background: var(--soft); }
+  .info { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14px; }
+  .info dt { color: var(--muted); }
+  .info dd { margin: 0; word-break: break-all; }
+  .hint { margin-top: 16px; font-size: 13px; color: var(--muted); }
   .step .txt { flex: 1; min-width: 0; }
   .step .txt b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .step .txt span { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden;
@@ -191,7 +198,7 @@
 const $ = id => document.getElementById(id);
 const DUOI_ANH = /\.(jpe?g|png|webp|bmp|gif|tiff?)$/i;
 // Mỗi ảnh: { id, file, ten, url, urlVe, phien, crops, preds, meta, s: 'moi'|'dang'|'cat'|'xong'|'loi', loi }
-const st = { ds: [], chon: null, view: 'goc', busy: null, dung: false };
+const st = { ds: [], chon: null, view: 'goc', buoc: 1, busy: null, dung: false };
 let nextId = 1;
 
 function status(msg, kind) {
@@ -203,6 +210,10 @@ function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&l
 const cur = () => st.ds.find(x => x.id === st.chon);
 const canCat = () => st.ds.filter(x => x.s === 'moi' || x.s === 'loi');
 const canDoan = () => st.ds.filter(x => x.s === 'cat' && x.crops.length);
+const viewCua = b => b === 2 ? 've' : 'goc';   // chỉ tab 2 xem khung phát hiện; tab 1, 3 xem ảnh gốc
+
+// Chuyển tab bước: chỉ đổi cách xem kết quả đã có, không gọi lại server
+function moTab(b) { st.buoc = b; st.view = viewCua(b); render(); }
 
 /* ---------- Thêm / xoá ảnh ---------- */
 function addFiles(files) {
@@ -272,10 +283,12 @@ function render() {
   $('s2t').textContent = nCat ? `${nCat}/${n} ảnh · ${nNguoi} người` : 'Tìm người + vật, cắt crop';
   $('s3t').textContent = nXong ? `${nXong}/${nCat} ảnh đã phân loại` : 'Phân loại từng crop';
   $('upBtns').querySelectorAll('.btn').forEach(b => b.classList.toggle('off', !!st.busy));
+  for (const b of [1, 2, 3]) $('s' + b).classList.toggle('cur', st.buoc === b);
   $('btnProcess').textContent = st.busy === 'cat' ? 'Dừng' : 'Tiền xử lý ảnh';
   $('btnPredict').textContent = st.busy === 'doan' ? 'Dừng' : 'Dự đoán';
-  $('btnProcess').disabled = st.busy ? st.busy !== 'cat' : !canCat().length;
-  $('btnPredict').disabled = st.busy ? st.busy !== 'doan' : !canDoan().length;
+  // Hết ảnh cần làm thì nút vẫn bấm được, nhưng chỉ chuyển sang tab của bước đó
+  $('btnProcess').disabled = st.busy ? st.busy !== 'cat' : !canCat().length && !nCat;
+  $('btnPredict').disabled = st.busy ? st.busy !== 'doan' : !canDoan().length && !nXong;
   $('btnClear').hidden = !n || !!st.busy;
 
   // Dải ảnh nhỏ
@@ -297,7 +310,7 @@ function render() {
     return;
   }
   if (!it.urlVe) st.view = 'goc';
-  $('tabs').hidden = !it.urlVe;
+  $('tabs').hidden = !it.urlVe || st.buoc === 3;   // tab 3 chỉ cần ảnh gốc
   $('img').src = st.view === 've' ? it.urlVe : it.url;
   $('legend').hidden = st.view !== 've';
   for (const b of $('tabs').children) b.classList.toggle('on', b.dataset.v === st.view);
@@ -306,6 +319,17 @@ function render() {
 }
 
 function renderCards(it) {
+  if (st.buoc === 1) {   // tab 1: thông tin ảnh gốc
+    $('resTitle').textContent = 'Ảnh gốc';
+    const tt = { moi: 'Chưa tiền xử lý', dang: 'Đang tiền xử lý…', cat: `Đã cắt ${it.crops.length} người, chưa dự đoán`,
+                 xong: `Đã dự đoán ${it.crops.length} người`, loi: 'Lỗi: ' + it.loi }[it.s];
+    $('results').innerHTML = `<dl class="info">
+      <dt>Tên</dt><dd>${esc(it.ten)}</dd>
+      <dt>Dung lượng</dt><dd>${(it.file.size / 1024).toFixed(0)} KB</dd>
+      <dt>Trạng thái</dt><dd>${esc(tt)}</dd></dl>
+      <div class="hint">Bấm ô <b>2</b> để xem vùng người được cắt, ô <b>3</b> để xem kết quả dự đoán.</div>`;
+    return;
+  }
   if (it.s === 'moi' || it.s === 'dang' || it.s === 'loi') {
     $('resTitle').textContent = 'Kết quả';
     $('results').innerHTML = `<div class="empty">${it.s === 'dang' ? '<span class="spin"></span>Đang tiền xử lý ảnh này…'
@@ -314,9 +338,9 @@ function renderCards(it) {
   }
   $('resTitle').textContent = `Kết quả · ${it.crops.length} người`;
   if (!it.crops.length) { $('results').innerHTML = '<div class="empty">Không tìm thấy người nào trong ảnh (ngưỡng 0.7).</div>'; return; }
-  const preds = it.preds;
+  const preds = st.buoc === 3 ? it.preds : null;   // tab 2 chỉ xem vùng cắt
   $('results').innerHTML = '<div class="cards">' + it.crops.map((c, i) => {
-    let body = '<div class="waiting">Chưa dự đoán.</div>';
+    let body = st.buoc === 3 ? '<div class="waiting">Chưa dự đoán. Bấm nút <b>Dự đoán</b>.</div>' : '';
     if (preds) body = `<div class="pred"><span class="label">${esc(preds[i].lop)}</span></div>`;
     return `<div class="card">
       <img src="${c.anh}" alt="Crop người #${c.id + 1}">
@@ -341,14 +365,16 @@ async function catMot(it) {
     const j = await post('/api/xu-ly', it.file, it.file.type || 'application/octet-stream');
     Object.assign(it, { phien: j.phien, crops: j.crops, urlVe: j.anh_ve, preds: null, s: 'cat', loi: '',
       meta: `${it.ten} · ${j.kich_thuoc[0]}×${j.kich_thuoc[1]} px · ${j.crops.length} người, ${j.so_vat} vật · ${j.thoi_gian}s` });
-    if (it.id === st.chon) st.view = 've';
+    if (it.id === st.chon) st.view = viewCua(st.buoc);
   } catch (e) { Object.assign(it, { s: 'loi', loi: e.message }); }
 }
 
 async function chay(loai) {
   if (st.busy) { st.dung = true; status('Đang dừng sau ảnh hiện tại…', 'busy'); return; }
   const viec = loai === 'cat' ? canCat() : canDoan();
-  st.busy = loai; st.dung = false;
+  if (!viec.length) return moTab(loai === 'cat' ? 2 : 3);
+  st.busy = loai; st.dung = false; st.buoc = loai === 'cat' ? 2 : 3; st.view = viewCua(st.buoc);
+  render();   // khoá nút + hiện "Dừng" ngay khi bắt đầu, không đợi xong ảnh đầu
   const t0 = performance.now();
   let i = 0;
   for (const it of viec) {
@@ -387,13 +413,18 @@ $('thumbs').onclick = e => {
   const del = e.target.dataset.del;
   if (del) { if (!st.busy) removeItem(+del); return; }
   const t = e.target.closest('.thumb[data-id]');
-  if (t) { st.chon = +t.dataset.id; st.view = cur().urlVe ? 've' : 'goc'; render(); }
+  if (t) { st.chon = +t.dataset.id; st.view = viewCua(st.buoc); render(); }
 };
 document.addEventListener('keydown', e => {   // ← → để chuyển ảnh
   if (!st.ds.length || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
   const i = st.ds.indexOf(cur()) + (e.key === 'ArrowRight' ? 1 : -1);
-  if (st.ds[i]) { st.chon = st.ds[i].id; st.view = st.ds[i].urlVe ? 've' : 'goc'; render(); }
+  if (st.ds[i]) { st.chon = st.ds[i].id; st.view = viewCua(st.buoc); render(); }
 });
+document.querySelector('.steps').onclick = e => {   // bấm vào ô bước (không phải nút) = chuyển tab
+  if (e.target.closest('button, label, input')) return;
+  const s = e.target.closest('.step');
+  if (s) moTab(+s.id.slice(1));
+};
 // Chỉ gắn ở body: sự kiện từ vùng thả nổi lên body, gắn 2 nơi sẽ thêm ảnh 2 lần
 document.body.addEventListener('dragover', e => { e.preventDefault(); $('drop').classList.add('hover'); });
 document.body.addEventListener('dragleave', () => $('drop').classList.remove('hover'));
