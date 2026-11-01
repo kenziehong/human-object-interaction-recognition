@@ -31,7 +31,7 @@
                background: var(--soft); color: var(--accent); font-weight: 700; font-size: 14px; }
   .step.done .num { background: var(--ok); color: #fff; }
   .step .txt { flex: 1; min-width: 0; }
-  .step .txt b { display: block; font-size: 14px; }
+  .step .txt b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .step .txt span { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden;
                     text-overflow: ellipsis; }
   button, .btn { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer;
@@ -64,6 +64,27 @@
   .tag.drop-obj { background: transparent; border: 1px dashed var(--muted); color: var(--muted); font-weight: 500;
                   text-decoration: line-through; }
 
+  .thumbs { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; margin-bottom: 10px; }
+  .thumb { position: relative; flex: none; width: 88px; cursor: pointer; font-size: 11px; color: var(--muted); }
+  .thumb img { display: block; width: 88px; height: 66px; object-fit: cover; border-radius: 6px;
+               border: 2px solid transparent; background: var(--bg); }
+  .thumb.on img { border-color: var(--accent); }
+  .thumb .cap { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .thumb .dot { position: absolute; top: 5px; left: 5px; width: 10px; height: 10px; border-radius: 50%;
+                border: 2px solid #fff; background: var(--line); }
+  .thumb[data-s="dang"] .dot { background: var(--accent); }
+  .thumb[data-s="cat"] .dot { background: var(--crop); }
+  .thumb[data-s="xong"] .dot { background: var(--ok); }
+  .thumb[data-s="loi"] .dot { background: var(--err); }
+  .thumb .x { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; padding: 0; border-radius: 50%;
+              background: rgba(0,0,0,.6); color: #fff; font-size: 13px; line-height: 20px; display: none; }
+  .thumb:hover .x { display: block; }
+  body.busy .thumb .x { display: none; }
+  .thumb.add { display: grid; place-items: center; height: 66px; border: 2px dashed var(--line); border-radius: 6px;
+               font-size: 22px; color: var(--muted); }
+  .head-r { display: flex; align-items: center; gap: 8px; }
+  .small { padding: 4px 10px; font-size: 13px; }
+  .step .btns { display: flex; gap: 6px; }
   .empty { color: var(--muted); text-align: center; padding: 80px 20px; font-size: 14px; }
   .cards { display: flex; flex-direction: column; gap: 12px; }
   .card { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 14px; border: 1px solid var(--line);
@@ -99,6 +120,7 @@
   @media (max-width: 480px) {
     .card { grid-template-columns: 1fr; }
     .card img { width: 100%; height: 220px; }
+    .step { flex-wrap: wrap; }
   }
 </style>
 </head>
@@ -111,8 +133,11 @@
 <section class="steps">
   <div class="step" id="s1">
     <div class="num">1</div>
-    <div class="txt"><b>Tải ảnh lên</b><span id="s1t">JPG, PNG, WEBP</span></div>
-    <label for="file" class="btn" id="btnUpload">Chọn ảnh</label>
+    <div class="txt"><b>Tải ảnh lên</b><span id="s1t">Nhiều ảnh hoặc cả thư mục</span></div>
+    <div class="btns" id="upBtns">
+      <label for="file" class="btn">Chọn ảnh</label>
+      <label for="folder" class="btn ghost">Thư mục</label>
+    </div>
   </div>
   <div class="step" id="s2">
     <div class="num">2</div>
@@ -130,14 +155,18 @@
 <main>
   <section class="panel">
     <div class="panel-head">
-      <h2>Ảnh</h2>
-      <div class="tabs" id="tabs" hidden>
-        <button data-v="goc" class="on">Ảnh gốc</button>
-        <button data-v="ve">Khung phát hiện</button>
+      <h2 id="imgTitle">Ảnh</h2>
+      <div class="head-r">
+        <div class="tabs" id="tabs" hidden>
+          <button data-v="goc" class="on">Ảnh gốc</button>
+          <button data-v="ve">Khung phát hiện</button>
+        </div>
+        <button class="ghost small" id="btnClear" hidden>Xoá hết</button>
       </div>
     </div>
+    <div class="thumbs" id="thumbs" hidden></div>
     <label class="drop" id="drop" for="file">
-      <div><div class="big">Kéo thả ảnh vào đây</div><div>hoặc bấm để chọn file</div></div>
+      <div><div class="big">Kéo thả ảnh hoặc thư mục vào đây</div><div>hoặc bấm để chọn nhiều file</div></div>
     </label>
     <div class="viewer" id="viewer" hidden>
       <img id="img" alt="Ảnh đầu vào">
@@ -148,7 +177,8 @@
       </div>
       <div class="meta" id="meta"></div>
     </div>
-    <input type="file" id="file" accept="image/*" hidden>
+    <input type="file" id="file" accept="image/*" multiple hidden>
+    <input type="file" id="folder" webkitdirectory directory multiple hidden>
   </section>
 
   <section class="panel">
@@ -159,39 +189,145 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const st = { file: null, urlGoc: null, urlVe: null, phien: null, crops: [] };
+const DUOI_ANH = /\.(jpe?g|png|webp|bmp|gif|tiff?)$/i;
+// Mỗi ảnh: { id, file, ten, url, urlVe, phien, crops, preds, meta, s: 'moi'|'dang'|'cat'|'xong'|'loi', loi }
+const st = { ds: [], chon: null, view: 'goc', busy: null, dung: false };
+let nextId = 1;
 
 function status(msg, kind) {
   const el = $('status');
   el.className = 'status' + (kind === 'err' ? ' err' : '');
   el.innerHTML = kind === 'busy' ? '<span class="spin"></span>' + msg : msg;
 }
-function done(step, on) { $('s' + step).classList.toggle('done', on); }
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+const cur = () => st.ds.find(x => x.id === st.chon);
+const canCat = () => st.ds.filter(x => x.s === 'moi' || x.s === 'loi');
+const canDoan = () => st.ds.filter(x => x.s === 'cat' && x.crops.length);
 
-function show(v) {
-  $('img').src = v === 've' ? st.urlVe : st.urlGoc;
-  $('legend').hidden = v !== 've';
-  for (const b of $('tabs').children) b.classList.toggle('on', b.dataset.v === v);
+/* ---------- Thêm / xoá ảnh ---------- */
+function addFiles(files) {
+  const ok = [...files].filter(f => f.type.startsWith('image/') || DUOI_ANH.test(f.name))
+                       .filter(f => !/\.(heic|heif)$/i.test(f.name))
+                       .sort((a, b) => (a.webkitRelativePath || a.name).localeCompare(b.webkitRelativePath || b.name, 'vi', { numeric: true }));
+  const bo = files.length - ok.length;
+  if (!ok.length) return status(files.length ? 'Không có file ảnh nào (JPG, PNG, WEBP, BMP, GIF, TIFF).' : '', 'err');
+  for (const f of ok) st.ds.push({ id: nextId++, file: f, ten: f.webkitRelativePath || f.name, url: URL.createObjectURL(f),
+                                   urlVe: null, phien: null, crops: [], preds: null, meta: '', s: 'moi', loi: '' });
+  if (!cur()) st.chon = st.ds[st.ds.length - ok.length].id;
+  render();
+  status(`Đã thêm ${ok.length} ảnh` + (bo ? ` (bỏ qua ${bo} file không phải ảnh)` : '') + '. Bấm <b>Tiền xử lý ảnh</b>.');
 }
 
-function setFile(f) {
-  if (!f || !f.type.startsWith('image/')) return status('File không phải ảnh.', 'err');
-  if (st.urlGoc) URL.revokeObjectURL(st.urlGoc);
-  Object.assign(st, { file: f, urlGoc: URL.createObjectURL(f), urlVe: null, phien: null, crops: [] });
-  $('drop').hidden = true; $('viewer').hidden = false; $('tabs').hidden = true;
-  $('meta').textContent = `${f.name} · ${(f.size / 1024).toFixed(0)} KB`;
-  show('goc');
-  $('s1t').textContent = f.name;
-  $('s2t').textContent = 'Tìm người + vật, cắt crop'; $('s3t').textContent = 'Phân loại từng crop';
-  done(1, true); done(2, false); done(3, false);
-  $('btnUpload').textContent = 'Đổi ảnh'; $('btnUpload').className = 'btn ghost';
-  $('btnProcess').disabled = false; $('btnPredict').disabled = true;
-  $('resTitle').textContent = 'Kết quả';
-  $('results').innerHTML = '<div class="empty">Bấm <b>Tiền xử lý ảnh</b> để tìm người và vật.</div>';
-  status('');
+function removeItem(id) {
+  const i = st.ds.findIndex(x => x.id === id);
+  if (i < 0) return;
+  URL.revokeObjectURL(st.ds[i].url);
+  st.ds.splice(i, 1);
+  if (st.chon === id) st.chon = (st.ds[i] || st.ds[i - 1] || {}).id ?? null;
+  render();
 }
 
+function clearAll() {
+  st.ds.forEach(x => URL.revokeObjectURL(x.url));
+  st.ds = []; st.chon = null;
+  render(); status('');
+}
+
+// Kéo thả: đọc đệ quy cả thư mục (webkitGetAsEntry)
+async function readEntry(entry, out) {
+  if (entry.isFile) {
+    out.push(await new Promise((res, rej) => entry.file(res, rej)));
+  } else if (entry.isDirectory) {
+    const reader = entry.createReader();
+    let batch;
+    do {   // readEntries trả từng đợt (≤100 mục), gọi tới khi rỗng
+      batch = await new Promise((res, rej) => reader.readEntries(res, rej));
+      for (const e of batch) await readEntry(e, out);
+    } while (batch.length);
+  }
+}
+async function onDrop(dt) {
+  const entries = [...(dt.items || [])].map(it => it.webkitGetAsEntry && it.webkitGetAsEntry()).filter(Boolean);
+  if (!entries.length) return addFiles(dt.files);
+  status('Đang đọc thư mục…', 'busy');
+  const out = [];
+  try { for (const e of entries) await readEntry(e, out); }
+  catch (e) { return status('Không đọc được thư mục: ' + esc(e.message), 'err'); }
+  addFiles(out);
+}
+
+/* ---------- Hiển thị ---------- */
+function render() {
+  const n = st.ds.length, it = cur();
+  const nCat = st.ds.filter(x => x.s === 'cat' || x.s === 'xong').length;
+  const nXong = st.ds.filter(x => x.s === 'xong').length;
+  const nNguoi = st.ds.reduce((t, x) => t + x.crops.length, 0);
+  document.body.classList.toggle('busy', !!st.busy);
+
+  // Bước
+  $('s1').classList.toggle('done', n > 0);
+  $('s2').classList.toggle('done', n > 0 && canCat().length === 0 && !st.busy);
+  $('s3').classList.toggle('done', nXong > 0 && canDoan().length === 0 && !st.busy);
+  $('s1t').textContent = n ? `${n} ảnh` : 'Nhiều ảnh hoặc cả thư mục';
+  $('s2t').textContent = nCat ? `${nCat}/${n} ảnh · ${nNguoi} người` : 'Tìm người + vật, cắt crop';
+  $('s3t').textContent = nXong ? `${nXong}/${nCat} ảnh đã phân loại` : 'Phân loại từng crop';
+  $('upBtns').querySelectorAll('.btn').forEach(b => b.classList.toggle('off', !!st.busy));
+  $('btnProcess').textContent = st.busy === 'cat' ? 'Dừng' : 'Tiền xử lý ảnh';
+  $('btnPredict').textContent = st.busy === 'doan' ? 'Dừng' : 'Dự đoán';
+  $('btnProcess').disabled = st.busy ? st.busy !== 'cat' : !canCat().length;
+  $('btnPredict').disabled = st.busy ? st.busy !== 'doan' : !canDoan().length;
+  $('btnClear').hidden = !n || !!st.busy;
+
+  // Dải ảnh nhỏ
+  $('drop').hidden = n > 0; $('viewer').hidden = !it; $('thumbs').hidden = !n;
+  $('imgTitle').textContent = n ? `Ảnh · ${st.ds.indexOf(it) + 1}/${n}` : 'Ảnh';
+  $('thumbs').innerHTML = st.ds.map(x => {
+    const cap = x.preds ? x.preds.map(p => p.lop).join(', ') || '0 người'
+              : x.s === 'cat' ? `${x.crops.length} người` : x.s === 'loi' ? 'Lỗi' : x.ten.split('/').pop();
+    return `<div class="thumb${x.id === st.chon ? ' on' : ''}" data-id="${x.id}" data-s="${x.s}" title="${esc(x.ten)}">
+      <img src="${x.url}" alt="" loading="lazy"><span class="dot"></span>
+      <button class="x" data-del="${x.id}" title="Bỏ ảnh này">×</button><span class="cap">${esc(cap)}</span></div>`;
+  }).join('') + (st.busy ? '' : '<label class="thumb add" for="file" title="Thêm ảnh">+</label>');
+  const on = $('thumbs').querySelector('.on');
+  if (on) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+
+  if (!it) {
+    $('resTitle').textContent = 'Kết quả';
+    $('results').innerHTML = '<div class="empty">Tải ảnh lên rồi bấm <b>Tiền xử lý ảnh</b> để xem các vùng người được cắt ra.</div>';
+    return;
+  }
+  if (!it.urlVe) st.view = 'goc';
+  $('tabs').hidden = !it.urlVe;
+  $('img').src = st.view === 've' ? it.urlVe : it.url;
+  $('legend').hidden = st.view !== 've';
+  for (const b of $('tabs').children) b.classList.toggle('on', b.dataset.v === st.view);
+  $('meta').textContent = it.meta || `${it.ten} · ${(it.file.size / 1024).toFixed(0)} KB`;
+  renderCards(it);
+}
+
+function renderCards(it) {
+  if (it.s === 'moi' || it.s === 'dang' || it.s === 'loi') {
+    $('resTitle').textContent = 'Kết quả';
+    $('results').innerHTML = `<div class="empty">${it.s === 'dang' ? '<span class="spin"></span>Đang tiền xử lý ảnh này…'
+      : it.s === 'loi' ? 'Lỗi: ' + esc(it.loi) : 'Bấm <b>Tiền xử lý ảnh</b> để tìm người và vật.'}</div>`;
+    return;
+  }
+  $('resTitle').textContent = `Kết quả · ${it.crops.length} người`;
+  if (!it.crops.length) { $('results').innerHTML = '<div class="empty">Không tìm thấy người nào trong ảnh (ngưỡng 0.7).</div>'; return; }
+  const preds = it.preds;
+  $('results').innerHTML = '<div class="cards">' + it.crops.map((c, i) => {
+    let body = '<div class="waiting">Chưa dự đoán.</div>';
+    if (preds) body = `<div class="pred"><span class="label">${esc(preds[i].lop)}</span></div>`;
+    return `<div class="card">
+      <img src="${c.anh}" alt="Crop người #${c.id + 1}">
+      <div>
+        <div class="top"><b>#${c.id + 1}</b></div>
+        ${body}
+      </div></div>`;
+  }).join('') + '</div>';
+}
+
+/* ---------- Gọi server ---------- */
 async function post(url, body, type) {
   const r = await fetch(url, { method: 'POST', body, headers: { 'Content-Type': type } });
   const j = await r.json().catch(() => ({ loi: 'Phản hồi không hợp lệ từ server' }));
@@ -199,75 +335,73 @@ async function post(url, body, type) {
   return j;
 }
 
-async function processImage() {
-  $('btnProcess').disabled = $('btnPredict').disabled = true; $('btnUpload').classList.add('off');
-  status('Đang chạy DP-HOI…', 'busy');
+async function catMot(it) {
+  it.s = 'dang'; render();
   try {
-    const j = await post('/api/xu-ly', st.file, st.file.type);
-    Object.assign(st, { phien: j.phien, crops: j.crops, urlVe: j.anh_ve });
-    $('tabs').hidden = false; show('ve');
-    $('meta').textContent = `${st.file.name} · ${j.kich_thuoc[0]}×${j.kich_thuoc[1]} px · ${j.crops.length} người, ${j.so_vat} vật · ${j.thoi_gian}s`;
-    $('s2t').textContent = `${j.crops.length} người, ${j.so_vat} vật · ${j.thoi_gian}s`;
-    done(2, true); done(3, false);
-    renderCards(null);
-    $('btnPredict').disabled = j.crops.length === 0;
-    status(j.crops.length ? 'Đã cắt xong. Bấm <b>Dự đoán</b> để phân loại.' : 'Không tìm thấy người nào trong ảnh (ngưỡng 0.7).',
-           j.crops.length ? '' : 'err');
-  } catch (e) { status('Lỗi khi tiền xử lý ảnh: ' + esc(e.message), 'err'); }
-  $('btnProcess').disabled = false; $('btnUpload').classList.remove('off');
+    const j = await post('/api/xu-ly', it.file, it.file.type || 'application/octet-stream');
+    Object.assign(it, { phien: j.phien, crops: j.crops, urlVe: j.anh_ve, preds: null, s: 'cat', loi: '',
+      meta: `${it.ten} · ${j.kich_thuoc[0]}×${j.kich_thuoc[1]} px · ${j.crops.length} người, ${j.so_vat} vật · ${j.thoi_gian}s` });
+    if (it.id === st.chon) st.view = 've';
+  } catch (e) { Object.assign(it, { s: 'loi', loi: e.message }); }
 }
 
-async function predict() {
-  $('btnPredict').disabled = $('btnProcess').disabled = true; $('btnUpload').classList.add('off');
-  status('Đang trích embedding CLIP và chạy SVM…', 'busy');
-  try {
-    const j = await post('/api/du-doan', JSON.stringify({ phien: st.phien }), 'application/json');
-    renderCards(j.ket_qua);
-    done(3, true);
-    $('s3t').textContent = (j.ket_qua.length === 1 ? j.ket_qua[0].lop : `${j.ket_qua.length} crop đã phân loại`) + ` · ${j.thoi_gian}s`;
-    status(`Dự đoán xong trong ${j.thoi_gian}s.`);
-  } catch (e) { status('Lỗi khi dự đoán: ' + esc(e.message), 'err'); }
-  $('btnPredict').disabled = $('btnProcess').disabled = false; $('btnUpload').classList.remove('off');
+async function chay(loai) {
+  if (st.busy) { st.dung = true; status('Đang dừng sau ảnh hiện tại…', 'busy'); return; }
+  const viec = loai === 'cat' ? canCat() : canDoan();
+  st.busy = loai; st.dung = false;
+  const t0 = performance.now();
+  let i = 0;
+  for (const it of viec) {
+    if (st.dung || !st.ds.includes(it)) continue;
+    i++;
+    status(`${loai === 'cat' ? 'Đang chạy DP-HOI' : 'Đang chạy CLIP + SVM'} · ảnh ${i}/${viec.length}: ${esc(it.ten)}`, 'busy');
+    if (loai === 'cat') { await catMot(it); render(); continue; }
+    try {
+      let j;
+      try { j = await post('/api/du-doan', JSON.stringify({ phien: it.phien }), 'application/json'); }
+      catch (e) {   // phiên bị server xoá (quá nhiều ảnh) → tiền xử lý lại rồi thử lại
+        if (!/hết hạn/.test(e.message)) throw e;
+        await catMot(it);
+        if (it.s !== 'cat') continue;
+        j = await post('/api/du-doan', JSON.stringify({ phien: it.phien }), 'application/json');
+      }
+      Object.assign(it, { preds: j.ket_qua, s: 'xong' });
+    } catch (e) { Object.assign(it, { s: 'loi', loi: e.message }); }
+    render();
+  }
+  const dung = st.dung, nLoi = viec.filter(x => x.s === 'loi').length, giay = ((performance.now() - t0) / 1000).toFixed(1);
+  st.busy = null; st.dung = false;
+  render();
+  const msg = `${dung ? 'Đã dừng' : 'Xong'}: ${i}/${viec.length} ảnh trong ${giay}s` + (nLoi ? ` · ${nLoi} ảnh lỗi (chấm đỏ)` : '');
+  status(msg + (loai === 'cat' && !dung && canDoan().length ? '. Bấm <b>Dự đoán</b> để phân loại.' : '.'), nLoi ? 'err' : '');
 }
 
-function renderCards(preds) {
-  $('resTitle').textContent = `Kết quả · ${st.crops.length} người`;
-  if (!st.crops.length) { $('results').innerHTML = '<div class="empty">Không có người nào để phân loại.</div>'; return; }
-  $('results').innerHTML = '<div class="cards">' + st.crops.map((c, i) => {
-    const vat = c.vat.map(v => `<span class="tag obj">${esc(v.ten)} ${v.diem.toFixed(2)}</span>`).join('') +
-      c.vat_bo.map(v => `<span class="tag drop-obj" title="Bỏ: ${esc(v.ly_do)}">${esc(v.ten)}</span>`).join('');
-    let body = '<div class="waiting">Chưa dự đoán.</div>';
-    if (preds) {
-      const p = preds[i];
-      body = `<div class="pred"><span class="label">${esc(p.lop)}</span></div>`;
-      // Tạm ẩn thanh điểm 6 lớp (decision_function của SVM)
-      // const vals = p.diem.map(d => d.diem), lo = Math.min(...vals), hi = Math.max(...vals);
-      // body += `<div class="bars">${p.diem.slice().sort((a, b) => b.diem - a.diem).map(d => `
-      //     <span class="${d.lop === p.lop ? 'best' : ''}">${esc(d.ten_vn)}</span>
-      //     <div class="bar"><div style="width:${hi > lo ? 4 + 96 * (d.diem - lo) / (hi - lo) : 100}%"></div></div>
-      //     <span class="v">${d.diem.toFixed(2)}</span>`).join('')}</div>`;
-    }
-    return `<div class="card">
-      <img src="${c.anh}" alt="Crop người #${c.id + 1}">
-      <div>
-        <div class="top"><b>#${c.id + 1}${/* i === 0 && st.crops.length > 1 ? ' · người chính' : */ ''}</b>
-          <!-- tạm ẩn: <span class="tag">${esc(c.che_do)}</span>${vat} --></div>
-        <!-- tạm ẩn: <div class="meta">Người: ${c.nguoi_diem.toFixed(2)}</div> -->
-        ${body}
-      </div></div>`;
-  }).join('') + '</div>';
-  // + (preds ? '<div class="meta" style="margin-top:10px">Điểm = decision_function của SVM (không phải xác suất); cao hơn là khớp hơn.</div>' : '');
-}
-
-$('file').onchange = e => { setFile(e.target.files[0]); e.target.value = ''; };
-$('btnProcess').onclick = processImage;
-$('btnPredict').onclick = predict;
-$('tabs').onclick = e => { if (e.target.dataset.v && st.urlVe) show(e.target.dataset.v); };
-for (const el of [$('drop'), document.body]) {
-  el.addEventListener('dragover', e => { e.preventDefault(); $('drop').classList.add('hover'); });
-  el.addEventListener('dragleave', () => $('drop').classList.remove('hover'));
-  el.addEventListener('drop', e => { e.preventDefault(); $('drop').classList.remove('hover'); setFile(e.dataTransfer.files[0]); });
-}
+/* ---------- Sự kiện ---------- */
+$('file').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
+$('folder').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
+$('btnProcess').onclick = () => chay('cat');
+$('btnPredict').onclick = () => chay('doan');
+$('btnClear').onclick = clearAll;
+$('tabs').onclick = e => { if (e.target.dataset.v && cur()?.urlVe) { st.view = e.target.dataset.v; render(); } };
+$('thumbs').onclick = e => {
+  const del = e.target.dataset.del;
+  if (del) { if (!st.busy) removeItem(+del); return; }
+  const t = e.target.closest('.thumb[data-id]');
+  if (t) { st.chon = +t.dataset.id; st.view = cur().urlVe ? 've' : 'goc'; render(); }
+};
+document.addEventListener('keydown', e => {   // ← → để chuyển ảnh
+  if (!st.ds.length || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+  const i = st.ds.indexOf(cur()) + (e.key === 'ArrowRight' ? 1 : -1);
+  if (st.ds[i]) { st.chon = st.ds[i].id; st.view = st.ds[i].urlVe ? 've' : 'goc'; render(); }
+});
+// Chỉ gắn ở body: sự kiện từ vùng thả nổi lên body, gắn 2 nơi sẽ thêm ảnh 2 lần
+document.body.addEventListener('dragover', e => { e.preventDefault(); $('drop').classList.add('hover'); });
+document.body.addEventListener('dragleave', () => $('drop').classList.remove('hover'));
+document.body.addEventListener('drop', e => {
+  e.preventDefault(); $('drop').classList.remove('hover');
+  if (!st.busy) onDrop(e.dataTransfer);
+});
+render();
 </script>
 </body>
 </html>

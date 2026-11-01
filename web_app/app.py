@@ -158,7 +158,7 @@ def b64(img, max_canh=1280):
 
 
 PHIEN = {}   # id phiên → danh sách crop PIL của lần tiền xử lý ảnh gần nhất
-MAX_PHIEN = 30
+MAX_PHIEN = 300  # đủ cho một thư mục nhiều ảnh (giao diện tự tiền xử lý lại nếu phiên bị xoá)
 
 
 def doc_anh(raw):
