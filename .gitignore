@@ -20,4 +20,4 @@ data/results/
 .env
 
 # Bài báo PDF chỉ để ở máy, không đưa lên repo (bản quyền thuộc tác giả/IEEE); link ở doc/README_paper.md
-doc/*.pdf
+doc

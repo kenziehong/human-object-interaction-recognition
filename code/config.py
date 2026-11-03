@@ -21,6 +21,10 @@ SPLITS = ["train", "val", "test"]
 
 # Đặc trưng cơ bản (yêu cầu ban đầu)
 FEATURES = ["hog", "lbp", "color", "sift"]
+# Tên hiển thị (bảng, hình, nhận xét, slide). Khoá trong code giữ nguyên vì mọi file kết quả đặt theo khoá này.
+# sift = Dense SIFT + Bag of Visual Words; color = Color histogram HSV. Bảng quy ước đầy đủ ở README.
+FEATURE_NAMES = {"hog": "HOG", "lbp": "LBP", "color": "Color-HSV", "sift": "SIFT-BoVW", "clip": "CLIP"}
+MODEL_NAMES = {"logreg": "LogReg", "svm": "SVM", "rf": "RF", "xgb": "XGBoost", "clip_zs": "zero-shot"}
 # Đặc trưng bổ sung (khối nguyên tử lưu trong data/features/)
 EXTRA_FEATURES = ["geom", "sift_spm", "hog_upper", "sift_upper", "gist", "skin"]
 ATOMIC_FEATURES = FEATURES + EXTRA_FEATURES

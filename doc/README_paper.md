@@ -14,8 +14,8 @@ Bài báo tách bài toán này thành **2 bài toán con** (mục 1, 3.1: *"int
 
 | Bài toán con | Nhánh trong DP-HOI | Dữ liệu tiền huấn luyện |
 |---|---|---|
-| 1. Phát hiện người và vật | Object detection branch (detection decoder) | COCO (117.266 ảnh, 80 lớp), Objects365 (117.266 ảnh, 365 lớp), có bbox |
-| 2. Phân loại tương tác (động từ) | Verb classification branch (detection decoder dùng chung tham số + interaction decoder) | Haa500 (52.644 frame, 500 lớp), Kinetics-700 (117.266 frame, 700 lớp), Flickr30k (25.977 ảnh), VG (54.280 ảnh); chỉ có nhãn mức ảnh/video hoặc caption |
+| 1. Phát hiện người và vật | Object detection branch (detection decoder) | COCO (117,266 ảnh, 80 lớp), Objects365 (117,266 ảnh, 365 lớp), có bbox |
+| 2. Phân loại tương tác (động từ) | Verb classification branch (detection decoder dùng chung tham số + interaction decoder) | Haa500 (52,644 frame, 500 lớp), Kinetics-700 (117,266 frame, 700 lớp), Flickr30k (25,977 ảnh), VG (54,280 ảnh); chỉ có nhãn mức ảnh/video hoặc caption |
 
 Sau khi tiền huấn luyện, trọng số được dùng để khởi tạo các mô hình phát hiện HOI có sẵn (CDN-S, QPIC, GEN, HOICLIP, UPT, PViC), rồi fine-tune trên HICO-DET hoặc V-COCO.
 
@@ -25,7 +25,7 @@ Sau khi tiền huấn luyện, trọng số được dùng để khởi tạo c�
 
 ### 2.1. Nhánh phát hiện (bài toán con 1)
 
-- **Input:** cả bức ảnh. Ảnh được resize sao cho cạnh ngắn 800 px, cạnh dài tối đa 1.333 px. Mạng gồm ResNet-50 → transformer encoder → detection decoder với N = 100 object query.
+- **Input:** cả bức ảnh. Ảnh được resize sao cho cạnh ngắn 800 px, cạnh dài tối đa 1,333 px. Mạng gồm ResNet-50 → transformer encoder → detection decoder với N = 100 object query.
 - **Output:** với mỗi query có bbox (ŷ_box) và lớp vật (ŷ_o). Dự đoán được ghép với nhãn bằng bipartite matching như DETR.
 - **Loss:** L_d = 5·L1 + 2·GIoU + 1·cross-entropy.
 
@@ -33,7 +33,7 @@ Sau khi tiền huấn luyện, trọng số được dùng để khởi tạo c�
 
 - **Input:** cả bức ảnh (hoặc frame video), **không phải ảnh crop người**. Frame Kinetics-700 được resize về 256×256; các tập khác resize như nhánh phát hiện. Nhãn chỉ có **ở mức ảnh** (danh sách động từ trong ảnh), không có bbox người và không biết người nào làm hành động nào.
 - **Xử lý trong mạng:**
-  1. Detection decoder tìm người. Query nào có điểm "person" > T = 0,9 thì trở thành **Reliable Person Query (RPQ)**.
+  1. Detection decoder tìm người. Query nào có điểm "person" > T = 0.9 thì trở thành **Reliable Person Query (RPQ)**.
   2. Mỗi RPQ đi qua interaction decoder và tìm dấu hiệu hành động của đúng người đó bằng cross-attention.
 - **Output:**
   - ŷ_a ∈ R^(Np × Ca): điểm động từ cho từng người, với Np là số RPQ và Ca là tổng số động từ của mọi tập hành động.
@@ -49,8 +49,8 @@ Sau khi tiền huấn luyện, trọng số được dùng để khởi tạo c�
 
 | Bộ dữ liệu | Số ảnh train / test | Số lớp vật | Số động từ | Số loại HOI |
 |---|---|---|---|---|
-| HICO-DET | 38.118 / 9.658 | 80 | 117 | 600 (138 rare) |
-| V-COCO | 5.400 / 4.946 | 80 | 26 | bài báo không ghi |
+| HICO-DET | 38,118 / 9,658 | 80 | 117 | 600 (138 rare) |
+| V-COCO | 5,400 / 4,946 | 80 | 26 | bài báo không ghi |
 
 ## 3. Metric
 
@@ -62,7 +62,7 @@ Bài báo **chỉ dùng mAP của bài toán phát hiện HOI**. Mọi bảng s�
 
 **Khi nào một dự đoán được tính là đúng (true positive):** dự đoán phải thoả cả ba điều kiện:
 - đúng loại HOI (động từ + lớp vật, ví dụ *ride bicycle*);
-- bbox người **và** bbox vật đều có IoU ≥ 0,5 với một cặp trong nhãn;
+- bbox người **và** bbox vật đều có IoU ≥ 0.5 với một cặp trong nhãn;
 - cặp nhãn đó chưa được dự đoán khác nào khớp trước (nếu trùng thì dự đoán sau tính là false positive).
 
 **Cách tính:** với mỗi loại HOI, sắp các dự đoán theo điểm tin cậy, vẽ đường precision–recall rồi tính AP. **mAP** là trung bình đều AP của các loại HOI.
@@ -84,7 +84,7 @@ Bài báo **chỉ dùng mAP của bài toán phát hiện HOI**. Mọi bảng s�
 
 Bài báo chỉ ghi: *"We use the mean average precision of Scenario 1 (AP_role) [7]"*.
 
-- **AP_role (role AP):** một dự đoán đúng khi đúng hành động, bbox người có IoU ≥ 0,5, **và** bbox của vật ở vai trò đó cũng có IoU ≥ 0,5. Ví dụ với *eat*, vai trò `obj` là thức ăn, vai trò `instr` là dụng cụ. AP được tính cho từng cặp hành động–vai trò rồi lấy trung bình.
+- **AP_role (role AP):** một dự đoán đúng khi đúng hành động, bbox người có IoU ≥ 0.5, **và** bbox của vật ở vai trò đó cũng có IoU ≥ 0.5. Ví dụ với *eat*, vai trò `obj` là thức ăn, vai trò `instr` là dụng cụ. AP được tính cho từng cặp hành động–vai trò rồi lấy trung bình.
 - **Scenario 1 so với Scenario 2:** khác nhau ở trường hợp nhãn không có vật cho vai trò đó (vật bị che hoặc nằm ngoài ảnh).
   - Scenario 1 (bài báo dùng, chặt hơn): mô hình phải dự đoán bbox vật rỗng thì mới tính là đúng.
   - Scenario 2: bỏ qua bbox vật trong trường hợp này.
@@ -92,7 +92,7 @@ Bài báo chỉ ghi: *"We use the mean average precision of Scenario 1 (AP_role)
 
 ### 3.3. Cách bài báo báo cáo kết quả
 
-- Mọi cải thiện đều tính bằng **điểm mAP tuyệt đối**. Ví dụ "+3,02% mAP" nghĩa là CDN-S† tăng từ 31,98 lên 35,00, không phải tăng 3,02% tương đối.
+- Mọi cải thiện đều tính bằng **điểm mAP tuyệt đối**. Ví dụ "+3.02% mAP" nghĩa là CDN-S† tăng từ 31.98 lên 35.00, không phải tăng 3.02% tương đối.
 - Hình 1 là đường **mAP theo số epoch**, dùng để so tốc độ hội tụ.
 - Hình 3 chỉ là ảnh minh hoạ attention map, không có con số.
 
@@ -100,10 +100,10 @@ Bài báo chỉ ghi: *"We use the mean average precision of Scenario 1 (AP_role)
 
 | Bộ dữ liệu | Mô hình | Không có DP-HOI | Có DP-HOI |
 |---|---|---|---|
-| HICO-DET (DT, Full / Rare / Non-Rare) | CDN-S† | 31,98 / 28,61 / 32,99 | 35,00 / 32,38 / 35,78 |
-| HICO-DET (DT, Full / Rare / Non-Rare) | HOICLIP | 34,69 / 31,12 / 35,74 | 36,56 / 34,36 / 37,22 |
-| V-COCO (AP_role, S1) | CDN-S | 61,7 | 64,8 |
-| V-COCO (AP_role, S1) | GENs | 62,4 | 66,6 |
+| HICO-DET (DT, Full / Rare / Non-Rare) | CDN-S† | 31.98 / 28.61 / 32.99 | 35.00 / 32.38 / 35.78 |
+| HICO-DET (DT, Full / Rare / Non-Rare) | HOICLIP | 34.69 / 31.12 / 35.74 | 36.56 / 34.36 / 37.22 |
+| V-COCO (AP_role, S1) | CDN-S | 61.7 | 64.8 |
+| V-COCO (AP_role, S1) | GENs | 62.4 | 66.6 |
 
 ## 4. So với đồ án
 
@@ -116,7 +116,7 @@ Bài báo chỉ ghi: *"We use the mean average precision of Scenario 1 (AP_role)
 | Metric | mAP / AP_role | Macro-F1 + recall từng lớp |
 | Đơn vị tính metric | AP cho từng loại HOI / từng vai trò | F1 và recall cho từng lớp |
 | Gộp metric | Trung bình đều các loại (mAP) | Trung bình đều các lớp (macro) |
-| Cần định vị đúng | Có (IoU ≥ 0,5 cho cả người và vật) | Không |
+| Cần định vị đúng | Có (IoU ≥ 0.5 cho cả người và vật) | Không |
 | Dùng điểm tin cậy | Có (xếp hạng để vẽ đường PR) | Không (chỉ dùng nhãn dự đoán cuối) |
 
 - **Không so số trực tiếp được** với bài báo: khác bài toán, khác số lớp, khác metric, và bài báo không có số phân loại riêng.
