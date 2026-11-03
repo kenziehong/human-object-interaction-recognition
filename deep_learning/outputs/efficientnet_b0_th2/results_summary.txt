@@ -1,0 +1,68 @@
+TỔNG HỢP KẾT QUẢ DEEP LEARNING
+Run tốt nhất trong mỗi backbone/TH được chọn theo val macro-F1; nếu hòa, ưu tiên val loss thấp hơn.
+Các metric được cập nhật trong lúc train; test chỉ xuất hiện sau khi đánh giá run thắng.
+
+==============================================================================
+Cấu hình: efficientnet_b0 | TH2 | seed=42
+Run: efficientnet_b0_th2_seed42
+Trạng thái: chưa khóa
+Tham số: pretrained=True, batch_size=16, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.003, backbone_lr=3e-05, weight_decay=0.0001, num_workers=2, device_actual=cuda
+Epoch tốt nhất: 9
+
+Train: loss=0.0231, accuracy=0.9939, f1_macro=0.9947, f1_weighted=0.9939, balanced_accuracy=0.9954
+Val:   loss=0.6999, accuracy=0.8115, f1_macro=0.7985, f1_weighted=0.8115, balanced_accuracy=0.8032
+Test:  chưa có
+Checkpoint: /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42/best.pt
+Chi tiết: /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42/metrics.json | /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42/config.json | /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42/report.txt
+
+==============================================================================
+Cấu hình: efficientnet_b0 | TH2 | seed=42
+Run: efficientnet_b0_th2_seed42_01
+Trạng thái: chưa khóa
+Tham số: pretrained=True, batch_size=32, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.0003, backbone_lr=1e-05, weight_decay=0.001, num_workers=2, device_actual=cuda
+Epoch tốt nhất: 20
+
+Train: loss=0.1065, accuracy=0.9674, f1_macro=0.9686, f1_weighted=0.9672, balanced_accuracy=0.9740
+Val:   loss=0.5840, accuracy=0.8110, f1_macro=0.7963, f1_weighted=0.8109, balanced_accuracy=0.8030
+Test:  chưa có
+Checkpoint: /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_01/best.pt
+Chi tiết: /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_01/metrics.json | /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_01/config.json | /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_01/report.txt
+
+==============================================================================
+Cấu hình: efficientnet_b0 | TH2 | seed=42
+Run: efficientnet_b0_th2_seed42_02  [TỐT NHẤT THEO VAL CHO CẤU HÌNH NÀY]
+Trạng thái: đã đánh giá test
+Tham số: pretrained=True, batch_size=16, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.0003, backbone_lr=1e-05, weight_decay=0.0001, num_workers=2, device_actual=cuda
+Epoch tốt nhất: 17
+
+Train: loss=0.0980, accuracy=0.9708, f1_macro=0.9718, f1_weighted=0.9706, balanced_accuracy=0.9771
+Val:   loss=0.5589, accuracy=0.8142, f1_macro=0.7993, f1_weighted=0.8137, balanced_accuracy=0.8091
+Test:  loss=0.5879, accuracy=0.8118, f1_macro=0.8003, f1_weighted=0.8111, balanced_accuracy=0.8070
+Checkpoint: /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_02/best.pt
+Chi tiết: /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_02/metrics.json | /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_02/config.json | /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_02/report.txt
+
+==============================================================================
+Cấu hình: efficientnet_b0 | TH2 | seed=42
+Run: efficientnet_b0_th2_seed42_03
+Trạng thái: chưa khóa
+Tham số: pretrained=True, batch_size=32, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.003, backbone_lr=3e-05, weight_decay=0.001, num_workers=2, device_actual=cuda
+Epoch tốt nhất: 6
+
+Train: loss=0.0792, accuracy=0.9765, f1_macro=0.9780, f1_weighted=0.9764, balanced_accuracy=0.9814
+Val:   loss=0.6398, accuracy=0.8083, f1_macro=0.7941, f1_weighted=0.8073, balanced_accuracy=0.8025
+Test:  chưa có
+Checkpoint: /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_03/best.pt
+Chi tiết: /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_03/metrics.json | /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_03/config.json | /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_03/report.txt
+
+==============================================================================
+Cấu hình: efficientnet_b0 | TH2 | seed=42
+Run: efficientnet_b0_th2_seed42_04
+Trạng thái: chưa khóa
+Tham số: pretrained=True, batch_size=16, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.001, backbone_lr=1e-05, weight_decay=0.0001, num_workers=2, device_actual=cuda
+Epoch tốt nhất: 20
+
+Train: loss=0.0951, accuracy=0.9700, f1_macro=0.9712, f1_weighted=0.9698, balanced_accuracy=0.9767
+Val:   loss=0.6078, accuracy=0.8083, f1_macro=0.7942, f1_weighted=0.8082, balanced_accuracy=0.8047
+Test:  chưa có
+Checkpoint: /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_04/best.pt
+Chi tiết: /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_04/metrics.json | /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_04/config.json | /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th2_seed42_04/report.txt

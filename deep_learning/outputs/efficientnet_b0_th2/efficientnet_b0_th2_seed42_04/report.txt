@@ -1,0 +1,47 @@
+[train]
+class_order=['hold', 'ride', 'eat/drink', 'talk_on_phone', 'work_on_computer', 'unknown']
+accuracy=0.970008, precision_macro=0.966313, recall_macro=0.976691, f1_macro=0.971158, precision_weighted=0.970243, recall_weighted=0.970008, f1_weighted=0.969828, balanced_accuracy=0.976691
+
+                  precision    recall  f1-score   support
+
+            hold     0.9595    0.9285    0.9438      1916
+            ride     0.9927    0.9971    0.9949      2053
+       eat/drink     0.9479    0.9963    0.9715      1078
+   talk_on_phone     0.9473    0.9967    0.9714       920
+work_on_computer     0.9713    1.0000    0.9854      1015
+         unknown     0.9791    0.9415    0.9599      2087
+
+        accuracy                         0.9700      9069
+       macro avg     0.9663    0.9767    0.9712      9069
+    weighted avg     0.9702    0.9700    0.9698      9069
+Confusion matrix (rows=true, columns=predicted):
+[[1779,    4,   46,   29,   18,   40],
+ [   1, 2047,    0,    3,    0,    2],
+ [   2,    0, 1074,    2,    0,    0],
+ [   1,    2,    0,  917,    0,    0],
+ [   0,    0,    0,    0, 1015,    0],
+ [  71,    9,   13,   17,   12, 1965]]
+
+[val]
+class_order=['hold', 'ride', 'eat/drink', 'talk_on_phone', 'work_on_computer', 'unknown']
+accuracy=0.808307, precision_macro=0.786919, recall_macro=0.804675, f1_macro=0.794223, precision_weighted=0.810755, recall_weighted=0.808307, f1_weighted=0.808160, balanced_accuracy=0.804675
+
+                  precision    recall  f1-score   support
+
+            hold     0.7254    0.6536    0.6877       384
+            ride     0.9207    0.9360    0.9283       422
+       eat/drink     0.7031    0.8050    0.7506       200
+   talk_on_phone     0.6402    0.7135    0.6749       192
+work_on_computer     0.8529    0.9062    0.8788       224
+         unknown     0.8791    0.8136    0.8451       456
+
+        accuracy                         0.8083      1878
+       macro avg     0.7869    0.8047    0.7942      1878
+    weighted avg     0.8108    0.8083    0.8082      1878
+Confusion matrix (rows=true, columns=predicted):
+[[251,  13,  41,  32,  19,  28],
+ [ 11, 395,   1,   4,   0,  11],
+ [ 19,   1, 161,  12,   3,   4],
+ [ 15,   7,  19, 137,   7,   7],
+ [  8,   3,   3,   6, 203,   1],
+ [ 42,  10,   4,  23,   6, 371]]

@@ -1,0 +1,68 @@
+TỔNG HỢP KẾT QUẢ DEEP LEARNING
+Run tốt nhất trong mỗi backbone/TH được chọn theo val macro-F1; nếu hòa, ưu tiên val loss thấp hơn.
+Các metric được cập nhật trong lúc train; test chỉ xuất hiện sau khi đánh giá run thắng.
+
+==============================================================================
+Cấu hình: resnet50 | TH2 | seed=42
+Run: resnet50_th2_seed42
+Trạng thái: chưa khóa
+Tham số: pretrained=True, batch_size=16, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.003, backbone_lr=3e-05, weight_decay=0.0001, num_workers=2, device_actual=cuda
+Epoch tốt nhất: 3
+
+Train: loss=0.0132, accuracy=0.9980, f1_macro=0.9981, f1_weighted=0.9980, balanced_accuracy=0.9982
+Val:   loss=0.5121, accuracy=0.8727, f1_macro=0.8660, f1_weighted=0.8718, balanced_accuracy=0.8632
+Test:  chưa có
+Checkpoint: /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42/best.pt
+Chi tiết: /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42/metrics.json | /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42/config.json | /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42/report.txt
+
+==============================================================================
+Cấu hình: resnet50 | TH2 | seed=42
+Run: resnet50_th2_seed42_01
+Trạng thái: chưa khóa
+Tham số: pretrained=True, batch_size=32, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.0003, backbone_lr=1e-05, weight_decay=0.001, num_workers=2, device_actual=cuda
+Epoch tốt nhất: 3
+
+Train: loss=0.1331, accuracy=0.9633, f1_macro=0.9654, f1_weighted=0.9631, balanced_accuracy=0.9698
+Val:   loss=0.4111, accuracy=0.8653, f1_macro=0.8605, f1_weighted=0.8649, balanced_accuracy=0.8637
+Test:  chưa có
+Checkpoint: /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_01/best.pt
+Chi tiết: /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_01/metrics.json | /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_01/config.json | /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_01/report.txt
+
+==============================================================================
+Cấu hình: resnet50 | TH2 | seed=42
+Run: resnet50_th2_seed42_02
+Trạng thái: chưa khóa
+Tham số: pretrained=True, batch_size=16, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.0003, backbone_lr=1e-05, weight_decay=0.0001, num_workers=2, device_actual=cuda
+Epoch tốt nhất: 6
+
+Train: loss=0.0124, accuracy=0.9981, f1_macro=0.9984, f1_weighted=0.9981, balanced_accuracy=0.9985
+Val:   loss=0.4581, accuracy=0.8727, f1_macro=0.8680, f1_weighted=0.8723, balanced_accuracy=0.8666
+Test:  chưa có
+Checkpoint: /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_02/best.pt
+Chi tiết: /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_02/metrics.json | /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_02/config.json | /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_02/report.txt
+
+==============================================================================
+Cấu hình: resnet50 | TH2 | seed=42
+Run: resnet50_th2_seed42_03  [TỐT NHẤT THEO VAL CHO CẤU HÌNH NÀY]
+Trạng thái: đã đánh giá test
+Tham số: pretrained=True, batch_size=32, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.003, backbone_lr=3e-05, weight_decay=0.001, num_workers=2, device_actual=cuda
+Epoch tốt nhất: 11
+
+Train: loss=0.0001, accuracy=1.0000, f1_macro=1.0000, f1_weighted=1.0000, balanced_accuracy=1.0000
+Val:   loss=0.6625, accuracy=0.8770, f1_macro=0.8714, f1_weighted=0.8759, balanced_accuracy=0.8683
+Test:  loss=0.6665, accuracy=0.8611, f1_macro=0.8588, f1_weighted=0.8608, balanced_accuracy=0.8565
+Checkpoint: /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_03/best.pt
+Chi tiết: /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_03/metrics.json | /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_03/config.json | /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_03/report.txt
+
+==============================================================================
+Cấu hình: resnet50 | TH2 | seed=42
+Run: resnet50_th2_seed42_04
+Trạng thái: chưa khóa
+Tham số: pretrained=True, batch_size=16, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.001, backbone_lr=1e-05, weight_decay=0.0001, num_workers=2, device_actual=cuda
+Epoch tốt nhất: 12
+
+Train: loss=0.0016, accuracy=1.0000, f1_macro=1.0000, f1_weighted=1.0000, balanced_accuracy=1.0000
+Val:   loss=0.5698, accuracy=0.8738, f1_macro=0.8696, f1_weighted=0.8733, balanced_accuracy=0.8678
+Test:  chưa có
+Checkpoint: /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_04/best.pt
+Chi tiết: /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_04/metrics.json | /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_04/config.json | /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_04/report.txt

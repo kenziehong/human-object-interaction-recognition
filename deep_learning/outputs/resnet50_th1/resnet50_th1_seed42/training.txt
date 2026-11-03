@@ -1,0 +1,19 @@
+[2026-10-25T18:32:21+07:00] Bắt đầu run resnet50_th1_seed42
+[2026-10-25T18:32:21+07:00] Cấu hình: backbone=resnet50, setup=th1, seed=42, batch_size=16, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.003, backbone_lr=1e-05, weight_decay=0.001, num_workers=0, device=mps, pretrained=True, class_names=['hold', 'ride', 'eat/drink', 'talk_on_phone', 'work_on_computer', 'unknown'], image_size=224, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)
+[2026-10-25T18:32:22+07:00] Runtime: torch=2.14.1, torchvision=0.29.1, device=mps, model_device=mps:0, MPS built=True, available=True
+[2026-10-25T18:36:42+07:00] Epoch 1: checkpoint tốt nhất mới; val_macro_f1=0.810639, val_loss=0.518725; đã lưu /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42/best.pt
+[2026-10-25T18:36:42+07:00] Epoch 1/30: train_loss=0.391927, train_macro_f1=0.848689, val_loss=0.518725, val_macro_f1=0.810639, val_accuracy=0.820554, learning_rates=[0.003], seconds=260.21, images_per_second=93.66
+[2026-10-25T18:43:21+07:00] Epoch 2: checkpoint tốt nhất mới; val_macro_f1=0.819381, val_loss=0.505858; đã lưu /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42/best.pt
+[2026-10-25T18:43:21+07:00] Epoch 2/30: train_loss=0.278223, train_macro_f1=0.893749, val_loss=0.505858, val_macro_f1=0.819381, val_accuracy=0.832268, learning_rates=[0.003], seconds=398.59, images_per_second=57.69
+[2026-10-25T18:55:14+07:00] Epoch 3/30: train_loss=0.277829, train_macro_f1=0.891641, val_loss=0.553834, val_macro_f1=0.815636, val_accuracy=0.825879, learning_rates=[0.003], seconds=712.81, images_per_second=23.42
+[2026-10-25T19:02:05+07:00] Epoch 4: checkpoint tốt nhất mới; val_macro_f1=0.837631, val_loss=0.528018; đã lưu /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42/best.pt
+[2026-10-25T19:02:05+07:00] Epoch 4/30: train_loss=0.182788, train_macro_f1=0.936939, val_loss=0.528018, val_macro_f1=0.837631, val_accuracy=0.848243, learning_rates=[0.003], seconds=410.56, images_per_second=45.11
+[2026-10-25T19:08:53+07:00] Epoch 5/30: train_loss=0.193413, train_macro_f1=0.928904, val_loss=0.571311, val_macro_f1=0.809345, val_accuracy=0.824814, learning_rates=[0.0015], seconds=407.31, images_per_second=50.95
+[2026-10-25T19:16:02+07:00] Epoch 6: checkpoint tốt nhất mới; val_macro_f1=0.839829, val_loss=0.553994; đã lưu /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42/best.pt
+[2026-10-25T19:16:02+07:00] Epoch 6/30: train_loss=0.133795, train_macro_f1=0.965364, val_loss=0.553994, val_macro_f1=0.839829, val_accuracy=0.850373, learning_rates=[0.0015], seconds=428.93, images_per_second=43.76
+[2026-10-25T19:22:04+07:00] Epoch 7/30: train_loss=0.127361, train_macro_f1=0.967880, val_loss=0.556747, val_macro_f1=0.831594, val_accuracy=0.843983, learning_rates=[0.0015], seconds=362.42, images_per_second=54.33
+[2026-10-25T19:28:24+07:00] Epoch 8/30: train_loss=0.138549, train_macro_f1=0.957219, val_loss=0.583027, val_macro_f1=0.826337, val_accuracy=0.837061, learning_rates=[0.00075], seconds=379.19, images_per_second=57.04
+[2026-10-25T19:33:51+07:00] Epoch 9/30: train_loss=0.109842, train_macro_f1=0.974064, val_loss=0.569325, val_macro_f1=0.829109, val_accuracy=0.839723, learning_rates=[0.00075], seconds=326.99, images_per_second=56.83
+[2026-10-25T19:38:57+07:00] Epoch 10/30: train_loss=0.106112, train_macro_f1=0.976187, val_loss=0.580397, val_macro_f1=0.830335, val_accuracy=0.841853, learning_rates=[0.00075], seconds=306.69, images_per_second=66.97
+[2026-10-25T19:44:04+07:00] Epoch 11/30: train_loss=0.101288, train_macro_f1=0.978883, val_loss=0.593030, val_macro_f1=0.828532, val_accuracy=0.840256, learning_rates=[0.000375], seconds=306.53, images_per_second=64.33
+[2026-10-25T19:44:04+07:00] Huấn luyện hoàn tất; best_epoch=6, best_val_macro_f1=0.839829

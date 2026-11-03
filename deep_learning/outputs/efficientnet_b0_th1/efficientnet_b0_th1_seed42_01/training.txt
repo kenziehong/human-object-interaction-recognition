@@ -1,0 +1,18 @@
+[2026-10-25T12:41:56+00:00] Bắt đầu run efficientnet_b0_th1_seed42_01
+[2026-10-25T12:41:56+00:00] Cấu hình: backbone=efficientnet_b0, setup=th1, seed=42, batch_size=32, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.0003, backbone_lr=1e-05, weight_decay=0.0001, num_workers=2, device=cuda, pretrained=True, class_names=['hold', 'ride', 'eat/drink', 'talk_on_phone', 'work_on_computer', 'unknown'], image_size=224, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)
+[2026-10-25T12:41:56+00:00] Runtime: torch=2.11.0+cu128, torchvision=0.26.0+cu128, device=cuda, model_device=cuda:0, MPS built=False, available=False
+[2026-10-25T12:42:46+00:00] Epoch 1: checkpoint tốt nhất mới; val_macro_f1=0.752221, val_loss=0.702638; đã lưu /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th1_seed42_01/best.pt
+[2026-10-25T12:42:46+00:00] Epoch 1/30: train_loss=0.706650, train_macro_f1=0.751406, val_loss=0.702638, val_macro_f1=0.752221, val_accuracy=0.774760, learning_rates=[0.0003], seconds=49.52, images_per_second=416.49
+[2026-10-25T12:43:35+00:00] Epoch 2: checkpoint tốt nhất mới; val_macro_f1=0.767741, val_loss=0.618210; đã lưu /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th1_seed42_01/best.pt
+[2026-10-25T12:43:35+00:00] Epoch 2/30: train_loss=0.610796, train_macro_f1=0.777558, val_loss=0.618210, val_macro_f1=0.767741, val_accuracy=0.787540, learning_rates=[0.0003], seconds=49.39, images_per_second=410.08
+[2026-10-25T12:44:25+00:00] Epoch 3/30: train_loss=0.570807, train_macro_f1=0.781870, val_loss=0.590374, val_macro_f1=0.763402, val_accuracy=0.783813, learning_rates=[0.0003], seconds=49.59, images_per_second=401.44
+[2026-10-25T12:45:16+00:00] Epoch 4: checkpoint tốt nhất mới; val_macro_f1=0.782308, val_loss=0.570568; đã lưu /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th1_seed42_01/best.pt
+[2026-10-25T12:45:16+00:00] Epoch 4/30: train_loss=0.539804, train_macro_f1=0.803669, val_loss=0.570568, val_macro_f1=0.782308, val_accuracy=0.800319, learning_rates=[0.0003], seconds=50.44, images_per_second=400.96
+[2026-10-25T12:46:06+00:00] Epoch 5: checkpoint tốt nhất mới; val_macro_f1=0.791738, val_loss=0.560407; đã lưu /kaggle/working/hoi/deep_learning/outputs/efficientnet_b0_th1_seed42_01/best.pt
+[2026-10-25T12:46:06+00:00] Epoch 5/30: train_loss=0.521086, train_macro_f1=0.811037, val_loss=0.560407, val_macro_f1=0.791738, val_accuracy=0.807242, learning_rates=[0.0003], seconds=50.39, images_per_second=400.26
+[2026-10-25T12:46:56+00:00] Epoch 6/30: train_loss=0.503902, train_macro_f1=0.812439, val_loss=0.551472, val_macro_f1=0.778900, val_accuracy=0.797657, learning_rates=[0.0003], seconds=49.96, images_per_second=400.31
+[2026-10-25T12:47:46+00:00] Epoch 7/30: train_loss=0.492151, train_macro_f1=0.818064, val_loss=0.546992, val_macro_f1=0.779330, val_accuracy=0.797657, learning_rates=[0.0003], seconds=49.32, images_per_second=417.11
+[2026-10-25T12:48:36+00:00] Epoch 8/30: train_loss=0.476936, train_macro_f1=0.826996, val_loss=0.540184, val_macro_f1=0.788736, val_accuracy=0.806177, learning_rates=[0.0003], seconds=50.36, images_per_second=404.10
+[2026-10-25T12:49:28+00:00] Epoch 9/30: train_loss=0.467522, train_macro_f1=0.830145, val_loss=0.536260, val_macro_f1=0.786787, val_accuracy=0.802982, learning_rates=[0.0003], seconds=51.47, images_per_second=388.52
+[2026-10-25T12:50:17+00:00] Epoch 10/30: train_loss=0.459168, train_macro_f1=0.832150, val_loss=0.533478, val_macro_f1=0.788037, val_accuracy=0.806177, learning_rates=[0.0003], seconds=49.35, images_per_second=403.02
+[2026-10-25T12:50:17+00:00] Huấn luyện hoàn tất; best_epoch=5, best_val_macro_f1=0.791738

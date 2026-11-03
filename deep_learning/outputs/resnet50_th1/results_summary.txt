@@ -1,0 +1,68 @@
+TỔNG HỢP KẾT QUẢ DEEP LEARNING
+Run tốt nhất trong mỗi backbone/TH được chọn theo val macro-F1; nếu hòa, ưu tiên val loss thấp hơn.
+Các metric được cập nhật trong lúc train; test chỉ xuất hiện sau khi đánh giá run thắng.
+
+==============================================================================
+Cấu hình: resnet50 | TH1 | seed=42
+Run: resnet50_th1_seed42
+Trạng thái: chưa khóa
+Tham số: pretrained=True, batch_size=16, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.003, backbone_lr=1e-05, weight_decay=0.001, num_workers=0, device_actual=mps
+Epoch tốt nhất: 6
+
+Train: loss=0.1338, accuracy=0.9650, f1_macro=0.9654, f1_weighted=0.9651, balanced_accuracy=0.9669
+Val:   loss=0.5540, accuracy=0.8504, f1_macro=0.8398, f1_weighted=0.8503, balanced_accuracy=0.8360
+Test:  chưa có
+Checkpoint: /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42/best.pt
+Chi tiết: /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42/metrics.json | /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42/config.json | /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42/report.txt
+
+==============================================================================
+Cấu hình: resnet50 | TH1 | seed=42
+Run: resnet50_th1_seed42_01  [TỐT NHẤT THEO VAL CHO CẤU HÌNH NÀY]
+Trạng thái: đã đánh giá test
+Tham số: pretrained=True, batch_size=32, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.0003, backbone_lr=1e-05, weight_decay=0.0001, num_workers=0, device_actual=mps
+Epoch tốt nhất: 16
+
+Train: loss=0.2828, accuracy=0.9085, f1_macro=0.9041, f1_weighted=0.9084, balanced_accuracy=0.9092
+Val:   loss=0.4305, accuracy=0.8605, f1_macro=0.8508, f1_weighted=0.8604, balanced_accuracy=0.8538
+Test:  loss=0.4472, accuracy=0.8468, f1_macro=0.8368, f1_weighted=0.8465, balanced_accuracy=0.8424
+Checkpoint: /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_01/best.pt
+Chi tiết: /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_01/metrics.json | /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_01/config.json | /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_01/report.txt
+
+==============================================================================
+Cấu hình: resnet50 | TH1 | seed=42
+Run: resnet50_th1_seed42_02
+Trạng thái: chưa khóa
+Tham số: pretrained=True, batch_size=16, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.0003, backbone_lr=1e-05, weight_decay=0.0001, num_workers=0, device_actual=mps
+Epoch tốt nhất: 11
+
+Train: loss=0.2865, accuracy=0.9088, f1_macro=0.9045, f1_weighted=0.9089, balanced_accuracy=0.9067
+Val:   loss=0.4363, accuracy=0.8605, f1_macro=0.8501, f1_weighted=0.8606, balanced_accuracy=0.8495
+Test:  chưa có
+Checkpoint: /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_02/best.pt
+Chi tiết: /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_02/metrics.json | /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_02/config.json | /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_02/report.txt
+
+==============================================================================
+Cấu hình: resnet50 | TH1 | seed=42
+Run: resnet50_th1_seed42_03
+Trạng thái: chưa khóa
+Tham số: pretrained=True, batch_size=16, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.001, backbone_lr=1e-05, weight_decay=0.0001, num_workers=0, device_actual=mps
+Epoch tốt nhất: 6
+
+Train: loss=0.2316, accuracy=0.9285, f1_macro=0.9267, f1_weighted=0.9287, balanced_accuracy=0.9273
+Val:   loss=0.4580, accuracy=0.8562, f1_macro=0.8475, f1_weighted=0.8566, balanced_accuracy=0.8442
+Test:  chưa có
+Checkpoint: /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_03/best.pt
+Chi tiết: /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_03/metrics.json | /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_03/config.json | /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_03/report.txt
+
+==============================================================================
+Cấu hình: resnet50 | TH1 | seed=42
+Run: resnet50_th1_seed42_04
+Trạng thái: chưa khóa
+Tham số: pretrained=True, batch_size=32, max_epochs=30, patience=5, min_delta=0.0, classifier_lr=0.0003, backbone_lr=1e-05, weight_decay=0.001, num_workers=0, device_actual=mps
+Epoch tốt nhất: 16
+
+Train: loss=0.2828, accuracy=0.9085, f1_macro=0.9041, f1_weighted=0.9084, balanced_accuracy=0.9092
+Val:   loss=0.4305, accuracy=0.8600, f1_macro=0.8504, f1_weighted=0.8599, balanced_accuracy=0.8534
+Test:  chưa có
+Checkpoint: /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_04/best.pt
+Chi tiết: /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_04/metrics.json | /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_04/config.json | /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_04/report.txt

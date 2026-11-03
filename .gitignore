@@ -16,11 +16,14 @@ data/dataset_6class_crops_v2/*
 !data/train_test_split/
 features/
 results/
-embedding_ml/outputs/models/*
-embedding_ml/outputs/models_v2/*
-embedding_ml/outputs/models_v3/*
+# Trong outputs chỉ đưa các file .txt vào Git; bỏ qua những loại file khác.
+/deep_learning/outputs/**
+!/deep_learning/outputs/**/
+!/deep_learning/outputs/**/*.txt
+/embedding_ml/outputs/**
+!/embedding_ml/outputs/**/
+!/embedding_ml/outputs/**/*.txt
 embedding_ml/__pycache__/*
-deep_learning/outputs/
 deep_learning/__pycache__/
 
 # Bí mật

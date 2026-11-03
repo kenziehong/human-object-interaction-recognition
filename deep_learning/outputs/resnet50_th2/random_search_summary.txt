@@ -1,0 +1,37 @@
+TỔNG KẾT RANDOM SEARCH DEEP LEARNING
+Seed lấy mẫu: 42; các run dùng seed huấn luyện: 42.
+Xếp hạng theo val macro-F1; nếu hòa, ưu tiên val loss thấp hơn.
+Test chỉ được đánh giá sau khi chọn cấu hình thắng; test không dùng để xếp hạng.
+Trạng thái: Hoàn tất.
+
+====================================================================================
+TỐT NHẤT: resnet50 | TH2
+Tham số: batch_size=32, classifier_lr=0.003, backbone_lr=3e-05, weight_decay=0.001, epochs=30, patience=5
+Validation: loss=0.6625, accuracy=0.8770, macro P/R/F1=0.8755/0.8683/0.8714, weighted P/R/F1=0.8757/0.8770/0.8759, balanced_accuracy=0.8683
+  Theo lớp (precision / recall / F1 / support):
+  hold: 0.8132 / 0.7708 / 0.7914 / 384
+  ride: 0.9359 / 0.9692 / 0.9523 / 422
+  eat/drink: 0.8564 / 0.8050 / 0.8299 / 200
+  talk_on_phone: 0.8689 / 0.8281 / 0.8480 / 192
+  work_on_computer: 0.9123 / 0.9286 / 0.9204 / 224
+  unknown: 0.8661 / 0.9079 / 0.8865 / 456
+Test: loss=0.6665, accuracy=0.8611, macro P/R/F1=0.8616/0.8565/0.8588, weighted P/R/F1=0.8608/0.8611/0.8608, balanced_accuracy=0.8565
+  Theo lớp (precision / recall / F1 / support):
+  hold: 0.7721 / 0.7855 / 0.7787 / 401
+  ride: 0.9345 / 0.9537 / 0.9440 / 389
+  eat/drink: 0.8543 / 0.8173 / 0.8354 / 208
+  talk_on_phone: 0.8366 / 0.7860 / 0.8106 / 215
+  work_on_computer: 0.9005 / 0.9213 / 0.9108 / 216
+  unknown: 0.8715 / 0.8753 / 0.8734 / 457
+Checkpoint: deep_learning/outputs/resnet50_th2/resnet50_th2_seed42_03/best.pt
+Chi tiết đầy đủ: /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_03/metrics.json | /kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_03/report.txt
+
+====================================================================================
+TẤT CẢ CẤU HÌNH ĐÃ CHẠY
+
+resnet50 | TH2 (5 cấu hình)
+ 1. macro-F1=0.8714, val_loss=0.6625, batch=32, classifier_lr=0.003, backbone_lr=3e-05, weight_decay=0.001, checkpoint=/kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_03/best.pt
+ 2. macro-F1=0.8696, val_loss=0.5698, batch=16, classifier_lr=0.001, backbone_lr=1e-05, weight_decay=0.0001, checkpoint=/kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_04/best.pt
+ 3. macro-F1=0.8680, val_loss=0.4581, batch=16, classifier_lr=0.0003, backbone_lr=1e-05, weight_decay=0.0001, checkpoint=/kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_02/best.pt
+ 4. macro-F1=0.8660, val_loss=0.5121, batch=16, classifier_lr=0.003, backbone_lr=3e-05, weight_decay=0.0001, checkpoint=/kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42/best.pt
+ 5. macro-F1=0.8605, val_loss=0.4111, batch=32, classifier_lr=0.0003, backbone_lr=1e-05, weight_decay=0.001, checkpoint=/kaggle/working/hoi/deep_learning/outputs/resnet50_th2_seed42_01/best.pt

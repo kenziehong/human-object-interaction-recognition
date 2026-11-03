@@ -1,0 +1,37 @@
+TỔNG KẾT RANDOM SEARCH DEEP LEARNING
+Seed lấy mẫu: 42; các run dùng seed huấn luyện: 42.
+Xếp hạng theo val macro-F1; nếu hòa, ưu tiên val loss thấp hơn.
+Test chỉ được đánh giá sau khi chọn cấu hình thắng; test không dùng để xếp hạng.
+Trạng thái: Hoàn tất.
+
+====================================================================================
+TỐT NHẤT: resnet50 | TH1
+Tham số: batch_size=32, classifier_lr=0.0003, backbone_lr=1e-05, weight_decay=0.0001, epochs=30, patience=5
+Validation: loss=0.4305, accuracy=0.8605, macro P/R/F1=0.8481/0.8538/0.8508, weighted P/R/F1=0.8606/0.8605/0.8604, balanced_accuracy=0.8538
+  Theo lớp (precision / recall / F1 / support):
+  hold: 0.7692 / 0.7552 / 0.7622 / 384
+  ride: 0.9465 / 0.9645 / 0.9554 / 422
+  eat/drink: 0.8010 / 0.8250 / 0.8128 / 200
+  talk_on_phone: 0.7727 / 0.7969 / 0.7846 / 192
+  work_on_computer: 0.8947 / 0.9107 / 0.9027 / 224
+  unknown: 0.9043 / 0.8706 / 0.8872 / 456
+Test: loss=0.4472, accuracy=0.8468, macro P/R/F1=0.8322/0.8424/0.8368, weighted P/R/F1=0.8470/0.8468/0.8465, balanced_accuracy=0.8424
+  Theo lớp (precision / recall / F1 / support):
+  hold: 0.7731 / 0.7307 / 0.7513 / 401
+  ride: 0.9540 / 0.9589 / 0.9564 / 389
+  eat/drink: 0.7589 / 0.8173 / 0.7870 / 208
+  talk_on_phone: 0.7512 / 0.7581 / 0.7546 / 215
+  work_on_computer: 0.8528 / 0.9120 / 0.8814 / 216
+  unknown: 0.9032 / 0.8775 / 0.8901 / 457
+Checkpoint: deep_learning/outputs/resnet50_th1/resnet50_th1_seed42_01/best.pt
+Chi tiết đầy đủ: /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_01/metrics.json | /Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_01/report.txt
+
+====================================================================================
+TẤT CẢ CẤU HÌNH ĐÃ CHẠY
+
+resnet50 | TH1 (5 cấu hình)
+ 1. macro-F1=0.8508, val_loss=0.4305, batch=32, classifier_lr=0.0003, backbone_lr=1e-05, weight_decay=0.0001, checkpoint=/Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_01/best.pt
+ 2. macro-F1=0.8504, val_loss=0.4305, batch=32, classifier_lr=0.0003, backbone_lr=1e-05, weight_decay=0.001, checkpoint=/Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_04/best.pt
+ 3. macro-F1=0.8501, val_loss=0.4363, batch=16, classifier_lr=0.0003, backbone_lr=1e-05, weight_decay=0.0001, checkpoint=/Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_02/best.pt
+ 4. macro-F1=0.8475, val_loss=0.4580, batch=16, classifier_lr=0.001, backbone_lr=1e-05, weight_decay=0.0001, checkpoint=/Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42_03/best.pt
+ 5. macro-F1=0.8398, val_loss=0.5540, batch=16, classifier_lr=0.003, backbone_lr=1e-05, weight_decay=0.001, checkpoint=/Users/quydau/Projects/human-object-interaction-recognition/deep_learning/outputs/resnet50_th1_seed42/best.pt
