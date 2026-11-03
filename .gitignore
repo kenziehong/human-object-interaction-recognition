@@ -23,6 +23,7 @@ results/
 /embedding_ml/outputs/**
 !/embedding_ml/outputs/**/
 !/embedding_ml/outputs/**/*.txt
+!embedding_ml/outputs/all_results_v3.txt
 embedding_ml/__pycache__/*
 deep_learning/__pycache__/
 
