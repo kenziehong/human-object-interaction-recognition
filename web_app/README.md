@@ -12,14 +12,18 @@ Web chạy cục bộ, 3 bước: **Tải ảnh lên → Tiền xử lý ảnh �
 
 ```
 web_app/
-├── app.py               server (thư viện chuẩn http.server) + logic cắt crop
-├── dphoi_detector.py    dựng DETR của DP-HOI, chỉ dùng nhánh detection, chạy được CPU / Apple MPS
-├── clip_svm.py          embedding CLIP + SVM (tiền xử lý giống lúc train)
-├── static/index.html    giao diện
+├── app.py                                server (thư viện chuẩn http.server) + logic cắt crop
+├── dphoi_detector.py                     dựng DETR của DP-HOI, chỉ dùng nhánh detection, chạy được CPU / Apple MPS
+├── clip_svm.py                           embedding CLIP + SVM có xác suất (tiền xử lý giống lúc train)
+├── predict_clip_svm_prob.py              dự đoán từ dòng lệnh kèm xác suất (chép từ code/ của repo chính)
+├── config.py                             ┐
+├── clip_feat.py                          ├ file đi kèm predict_clip_svm_prob.py (chép nguyên từ code/)
+├── data_utils.py                         ┘
+├── static/index.html                     giao diện
 ├── weights/
-│   ├── clip_svm.joblib              mô hình phân loại (có sẵn trong repo, 23 MB)
-│   └── dphoi_res50_3layers.pth      checkpoint DP-HOI (tải bằng setup.sh, không đưa lên repo)
-├── third_party/DP-HOI/  mã nguồn DP-HOI (clone bằng setup.sh, không đưa lên repo)
+│   ├── clip_svm_proba_r06_train.joblib   mô hình phân loại có xác suất (r06_train, 21 MB)
+│   └── dphoi_res50_3layers.pth           checkpoint DP-HOI (tải bằng setup.sh, không đưa lên repo)
+├── third_party/DP-HOI/                   mã nguồn DP-HOI (clone bằng setup.sh, không đưa lên repo)
 ├── scripts/setup.sh
 └── requirements.txt
 ```

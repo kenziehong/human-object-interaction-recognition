@@ -1,4 +1,4 @@
-# Đúng phiên bản đã dùng khi train/chạy thử (scikit-learn phải khớp để nạp clip_svm.joblib)
+# Đúng phiên bản đã dùng khi train/chạy thử (scikit-learn phải khớp để nạp clip_svm_proba_r06_train.joblib)
 torch==2.8.0
 torchvision==0.23.0
 scipy==1.13.1
@@ -8,3 +8,5 @@ open_clip_torch==3.3.0
 scikit-learn==1.6.1
 joblib==1.5.3
 gdown
+pandas==2.3.3
+opencv-python==4.11.0.86

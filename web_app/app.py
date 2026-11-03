@@ -1,4 +1,4 @@
-"""Web demo inference: ảnh gốc → DP-HOI tìm người + vật → cắt crop → CLIP ViT-B/32 + SVM (clip_svm.joblib) → 6 lớp.
+"""Web demo inference: ảnh gốc → DP-HOI tìm người + vật → cắt crop → CLIP ViT-B/32 + SVM (clip_svm_proba_r06_train.joblib) → 6 lớp.
 
 Cách cắt: 3 quy tắc, mỗi quy tắc có một lý do
   1. Phát hiện: DP-HOI tìm người và vật (80 lớp COCO), giữ những khung có độ tin cậy >= 0.7.

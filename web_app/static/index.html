@@ -341,7 +341,15 @@ function renderCards(it) {
   const preds = st.buoc === 3 ? it.preds : null;   // tab 2 chỉ xem vùng cắt
   $('results').innerHTML = '<div class="cards">' + it.crops.map((c, i) => {
     let body = st.buoc === 3 ? '<div class="waiting">Chưa dự đoán. Bấm nút <b>Dự đoán</b>.</div>' : '';
-    if (preds) body = `<div class="pred"><span class="label">${esc(preds[i].lop)}</span></div>`;
+    if (preds) {
+      const r = preds[i], pct = v => (100 * v).toFixed(1) + '%';
+      body = `<div class="pred"><span class="label">${esc(r.lop)}</span>`
+        + (r.do_tin_cay != null ? `<span class="code">${pct(r.do_tin_cay)}</span>` : '') + `</div>`
+        + (r.xac_suat ? `<div class="bars">${[...r.xac_suat].sort((a, b) => b.p - a.p).map(t =>
+            `<span${t.lop === r.lop ? ' class="best"' : ''}>${esc(t.lop)}</span>`
+            + `<div class="bar"><div style="width:${(100 * t.p).toFixed(1)}%"></div></div>`
+            + `<span class="v">${pct(t.p)}</span>`).join('')}</div>` : '');
+    }
     return `<div class="card">
       <img src="${c.anh}" alt="Crop người #${c.id + 1}">
       <div>
