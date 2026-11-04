@@ -148,8 +148,8 @@
   </div>
   <div class="step" id="s2">
     <div class="num">2</div>
-    <div class="txt"><b>Tiền xử lý ảnh</b><span id="s2t">Tìm người + vật, cắt crop</span></div>
-    <button id="btnProcess" disabled>Tiền xử lý ảnh</button>
+    <div class="txt"><b>Phát hiện đối tượng</b><span id="s2t">Tìm người + vật, cắt crop</span></div>
+    <button id="btnProcess" disabled>Phát hiện</button>
   </div>
   <div class="step" id="s3">
     <div class="num">3</div>
@@ -190,7 +190,7 @@
 
   <section class="panel">
     <div class="panel-head"><h2 id="resTitle">Kết quả</h2></div>
-    <div id="results"><div class="empty">Tải ảnh lên rồi bấm <b>Tiền xử lý ảnh</b> để xem các vùng người được cắt ra.</div></div>
+    <div id="results"><div class="empty">Tải ảnh lên rồi bấm <b>Phát hiện</b> để xem các vùng người được cắt ra.</div></div>
   </section>
 </main>
 
@@ -226,7 +226,7 @@ function addFiles(files) {
                                    urlVe: null, phien: null, crops: [], preds: null, meta: '', s: 'moi', loi: '' });
   if (!cur()) st.chon = st.ds[st.ds.length - ok.length].id;
   render();
-  status(`Đã thêm ${ok.length} ảnh` + (bo ? ` (bỏ qua ${bo} file không phải ảnh)` : '') + '. Bấm <b>Tiền xử lý ảnh</b>.');
+  status(`Đã thêm ${ok.length} ảnh` + (bo ? ` (bỏ qua ${bo} file không phải ảnh)` : '') + '. Bấm <b>Phát hiện</b>.');
 }
 
 function removeItem(id) {
@@ -284,7 +284,7 @@ function render() {
   $('s3t').textContent = nXong ? `${nXong}/${nCat} ảnh đã phân loại` : 'Phân loại từng crop';
   $('upBtns').querySelectorAll('.btn').forEach(b => b.classList.toggle('off', !!st.busy));
   for (const b of [1, 2, 3]) $('s' + b).classList.toggle('cur', st.buoc === b);
-  $('btnProcess').textContent = st.busy === 'cat' ? 'Dừng' : 'Tiền xử lý ảnh';
+  $('btnProcess').textContent = st.busy === 'cat' ? 'Dừng' : 'Phát hiện';
   $('btnPredict').textContent = st.busy === 'doan' ? 'Dừng' : 'Dự đoán';
   // Hết ảnh cần làm thì nút vẫn bấm được, nhưng chỉ chuyển sang tab của bước đó
   $('btnProcess').disabled = st.busy ? st.busy !== 'cat' : !canCat().length && !nCat;
@@ -306,7 +306,7 @@ function render() {
 
   if (!it) {
     $('resTitle').textContent = 'Kết quả';
-    $('results').innerHTML = '<div class="empty">Tải ảnh lên rồi bấm <b>Tiền xử lý ảnh</b> để xem các vùng người được cắt ra.</div>';
+    $('results').innerHTML = '<div class="empty">Tải ảnh lên rồi bấm <b>Phát hiện</b> để xem các vùng người được cắt ra.</div>';
     return;
   }
   if (!it.urlVe) st.view = 'goc';
@@ -321,7 +321,7 @@ function render() {
 function renderCards(it) {
   if (st.buoc === 1) {   // tab 1: thông tin ảnh gốc
     $('resTitle').textContent = 'Ảnh gốc';
-    const tt = { moi: 'Chưa tiền xử lý', dang: 'Đang tiền xử lý…', cat: `Đã cắt ${it.crops.length} người, chưa dự đoán`,
+    const tt = { moi: 'Chưa phát hiện', dang: 'Đang phát hiện…', cat: `Đã cắt ${it.crops.length} người, chưa dự đoán`,
                  xong: `Đã dự đoán ${it.crops.length} người`, loi: 'Lỗi: ' + it.loi }[it.s];
     $('results').innerHTML = `<dl class="info">
       <dt>Tên</dt><dd>${esc(it.ten)}</dd>
@@ -332,8 +332,8 @@ function renderCards(it) {
   }
   if (it.s === 'moi' || it.s === 'dang' || it.s === 'loi') {
     $('resTitle').textContent = 'Kết quả';
-    $('results').innerHTML = `<div class="empty">${it.s === 'dang' ? '<span class="spin"></span>Đang tiền xử lý ảnh này…'
-      : it.s === 'loi' ? 'Lỗi: ' + esc(it.loi) : 'Bấm <b>Tiền xử lý ảnh</b> để tìm người và vật.'}</div>`;
+    $('results').innerHTML = `<div class="empty">${it.s === 'dang' ? '<span class="spin"></span>Đang phát hiện đối tượng…'
+      : it.s === 'loi' ? 'Lỗi: ' + esc(it.loi) : 'Bấm <b>Phát hiện</b> để tìm người và vật.'}</div>`;
     return;
   }
   $('resTitle').textContent = `Kết quả · ${it.crops.length} người`;
@@ -393,7 +393,7 @@ async function chay(loai) {
     try {
       let j;
       try { j = await post('/api/du-doan', JSON.stringify({ phien: it.phien }), 'application/json'); }
-      catch (e) {   // phiên bị server xoá (quá nhiều ảnh) → tiền xử lý lại rồi thử lại
+      catch (e) {   // phiên bị server xoá (quá nhiều ảnh) → phát hiện lại rồi thử lại
         if (!/hết hạn/.test(e.message)) throw e;
         await catMot(it);
         if (it.s !== 'cat') continue;
