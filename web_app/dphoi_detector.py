@@ -1,4 +1,4 @@
-"""Tiền xử lý lúc inference: dùng mô hình DP-HOI (CVPR 2024) tìm người trong ảnh gốc, rồi cắt crop người
+"""Bước phát hiện lúc inference: dùng mô hình DP-HOI (CVPR 2024) tìm người trong ảnh gốc, rồi cắt crop người
 giống hệt cách tạo dataset_6class_crops (bbox người nới 20% mỗi phía, không vượt ra ngoài ảnh).
 
 Mô hình phân loại 6 lớp được train trên ảnh "đúng một người chính" (xi = ảnh cắt theo bbox người). Ảnh thực tế
