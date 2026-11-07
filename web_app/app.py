@@ -24,7 +24,8 @@ Chạy (sau khi cài theo README.md):
     python3 app.py --port 8080 --cpu
 """
 import argparse, base64, io, json, math, os, sys, threading, time, uuid
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from flask import Flask, jsonify, request, send_from_directory
+from werkzeug.exceptions import HTTPException
 
 import torch
 import torch.nn.functional as F
@@ -172,79 +173,70 @@ def doc_anh(raw):
     return ImageOps.exif_transpose(img).convert('RGB')
 
 
-class Handler(BaseHTTPRequestHandler):
-    phat_hien = phan_loai = None
+app = Flask(__name__, static_folder=None)
+phat_hien = phan_loai = None
 
-    def log_message(self, fmt, *a):
-        sys.stderr.write('[web] ' + fmt % a + '\n')
 
-    def _gui(self, code, body, ctype='application/json; charset=utf-8'):
-        if not isinstance(body, bytes):
-            body = json.dumps(body, ensure_ascii=False).encode()
-        self.send_response(code)
-        self.send_header('Content-Type', ctype)
-        self.send_header('Content-Length', str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+@app.get('/')
+@app.get('/index.html')
+def trang_chu():
+    return send_from_directory(os.path.join(HERE, 'static'), 'index.html')
 
-    def do_GET(self):
-        if self.path in ('/', '/index.html'):
-            with open(os.path.join(HERE, 'static', 'index.html'), 'rb') as f:
-                return self._gui(200, f.read(), 'text/html; charset=utf-8')
-        self._gui(404, {'loi': 'không tìm thấy'})
 
-    def do_POST(self):
-        raw = self.rfile.read(int(self.headers.get('Content-Length', 0)))
-        try:
-            if self.path == '/api/xu-ly':
-                return self._gui(200, self.xu_ly(raw))
-            if self.path == '/api/du-doan':
-                return self._gui(200, self.du_doan(json.loads(raw)))
-            self._gui(404, {'loi': 'không tìm thấy'})
-        except Exception as e:   # trả lỗi về giao diện thay vì đứt kết nối
-            import traceback
-            traceback.print_exc()
-            self._gui(500, {'loi': f'{type(e).__name__}: {e}'})
+@app.post('/api/xu-ly')
+def xu_ly():
+    t = time.time()
+    img = doc_anh(request.get_data())
+    nguoi, vat = phat_hien(img)
+    crops = tao_crop(img, nguoi, vat)
+    pid = uuid.uuid4().hex
+    PHIEN[pid] = [c['crop'] for c in crops]
+    while len(PHIEN) > MAX_PHIEN:
+        PHIEN.pop(next(iter(PHIEN)))
+    return jsonify({'phien': pid, 'kich_thuoc': img.size, 'thoi_gian': round(time.time() - t, 2),
+                    'anh_ve': b64(ve(img, nguoi, vat, crops)), 'so_vat': len(vat),
+                    'crops': [{'id': c['id'], 'anh': b64(c['crop'], 640), 'che_do': c['che_do'],
+                               'nguoi_diem': c['nguoi']['diem'], 'khung_cat': c['khung_cat'],
+                               'vat': [{'ten': v['ten'], 'diem': v['diem']} for v in c['vat']],
+                               'vat_bo': [{'ten': v['ten'], 'diem': v['diem'], 'ly_do': v['ly_do']}
+                                          for v in c['vat_bo']]} for c in crops]})
 
-    def xu_ly(self, raw):
-        t = time.time()
-        img = doc_anh(raw)
-        nguoi, vat = self.phat_hien(img)
-        crops = tao_crop(img, nguoi, vat)
-        pid = uuid.uuid4().hex
-        PHIEN[pid] = [c['crop'] for c in crops]
-        while len(PHIEN) > MAX_PHIEN:
-            PHIEN.pop(next(iter(PHIEN)))
-        return {'phien': pid, 'kich_thuoc': img.size, 'thoi_gian': round(time.time() - t, 2),
-                'anh_ve': b64(ve(img, nguoi, vat, crops)), 'so_vat': len(vat),
-                'crops': [{'id': c['id'], 'anh': b64(c['crop'], 640), 'che_do': c['che_do'],
-                           'nguoi_diem': c['nguoi']['diem'], 'khung_cat': c['khung_cat'],
-                           'vat': [{'ten': v['ten'], 'diem': v['diem']} for v in c['vat']],
-                           'vat_bo': [{'ten': v['ten'], 'diem': v['diem'], 'ly_do': v['ly_do']}
-                                      for v in c['vat_bo']]} for c in crops]}
 
-    def du_doan(self, body):
-        crops = PHIEN.get(body.get('phien'))
-        if crops is None:
-            raise ValueError('phiên đã hết hạn, hãy bấm "Phát hiện" lại')
-        if not crops:
-            return {'ket_qua': [], 'thoi_gian': 0}
-        t = time.time()
-        return {'ket_qua': self.phan_loai(crops), 'thoi_gian': round(time.time() - t, 2)}
+@app.post('/api/du-doan')
+def du_doan():
+    body = json.loads(request.get_data())
+    crops = PHIEN.get(body.get('phien'))
+    if crops is None:
+        raise ValueError('phiên đã hết hạn, hãy bấm "Phát hiện" lại')
+    if not crops:
+        return jsonify({'ket_qua': [], 'thoi_gian': 0})
+    t = time.time()
+    return jsonify({'ket_qua': phan_loai(crops), 'thoi_gian': round(time.time() - t, 2)})
+
+
+@app.errorhandler(Exception)
+def loi(e):   # trả lỗi về giao diện thay vì đứt kết nối
+    if isinstance(e, HTTPException):
+        return jsonify({'loi': 'không tìm thấy' if e.code == 404 else e.description}), e.code
+    import traceback
+    traceback.print_exc()
+    return jsonify({'loi': f'{type(e).__name__}: {e}'}), 500
 
 
 def main():
+    global phat_hien, phan_loai
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--port', type=int, default=8000)
     ap.add_argument('--host', default='127.0.0.1')
     ap.add_argument('--cpu', action='store_true', help='chạy DP-HOI trên CPU (mặc định: MPS/CUDA nếu có)')
     a = ap.parse_args()
     print('Đang nạp DP-HOI ...', flush=True)
-    Handler.phat_hien = PhatHien(torch.device('cpu') if a.cpu else None)
-    print(f'  device: {Handler.phat_hien.cat.device}\nĐang nạp CLIP ViT-B/32 + SVM ...', flush=True)
-    Handler.phan_loai = PhanLoai()
+    phat_hien = PhatHien(torch.device('cpu') if a.cpu else None)
+    print(f'  device: {phat_hien.cat.device}\nĐang nạp CLIP ViT-B/32 + SVM ...', flush=True)
+    phan_loai = PhanLoai()
     print(f'Sẵn sàng: http://{a.host}:{a.port}', flush=True)
-    ThreadingHTTPServer((a.host, a.port), Handler).serve_forever()
+    app.json.ensure_ascii = False
+    app.run(host=a.host, port=a.port, threaded=True)
 
 
 if __name__ == '__main__':
