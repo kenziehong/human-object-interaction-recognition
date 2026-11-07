@@ -41,6 +41,8 @@ human-object-interaction-recognition/
 │   ├── 02_train_select.py       grid search trên val (12 bộ đặc trưng x 4 mô hình) -> results/<rXX>/val_results.csv
 │   ├── 03_final_test.py         train lại trên train+val, đánh giá test -> results/<rXX>/
 │   └── 04_report.ipynb          báo cáo chính: hiển thị phiên bản mới nhất (hiện là r01)
+├── deep_learning/                phân loại ảnh bằng ResNet50 / EfficientNet-B0
+├── embedding_ml/                 image embedding + classifier học máy
 ├── features/<fXX>/              (tự sinh) đặc trưng .npy, nhãn, codebook SIFT, timing_extract.csv, run_info.json
 ├── results/<rXX>/               (tự sinh) kết quả val/test, confusion matrix, mô hình .joblib, run_info.json
 ├── doc/                         README_paper.md (tóm tắt input, output, metric của DP-HOI); PDF bài báo chỉ để ở máy, không có trên repo
@@ -157,6 +159,39 @@ Tùy chọn:
   - `run_info.json`: `total_wall_s` của mỗi bước.
 
 > Nếu trong `data/` thiếu ảnh so với `labels.csv`, pipeline in cảnh báo và chỉ dùng ảnh đang có.
+
+## Pipeline bổ sung
+
+Ngoài pipeline đặc trưng thủ công ở trên, repo có hai pipeline phân loại ảnh crop dựa trên CNN. Cả hai dùng split `data/train_test_split/labels_split_unk3000.csv` và ảnh trong `data/dataset_6class_crops_v2/`. Ảnh được áp dụng hướng EXIF, chuyển sang RGB, resize giữ tỷ lệ, padding nền đen thành `224×224`, rồi chuẩn hóa theo ImageNet; không dùng tăng cường dữ liệu. Cài thư viện bằng `python -m pip install -r requirements.txt`.
+
+### Deep learning
+
+[README deep learning](deep_learning/README.md) mô tả pipeline dùng ResNet50 hoặc EfficientNet-B0 để phân loại trực tiếp ảnh. Có hai thiết lập: **TH1** đóng băng backbone và chỉ huấn luyện classifier; **TH2** fine-tune backbone cùng classifier từ epoch đầu. Trọng số khởi đầu mặc định là pretrained ImageNet; dùng `--no-pretrained` để khởi tạo ngẫu nhiên.
+
+Chạy cấu hình đơn lẻ, ví dụ:
+
+```bash
+python deep_learning/train.py --backbone resnet50 --setup th1 --device mps
+```
+
+Để tìm cấu hình, `random_search.py` thử tối đa 5 cấu hình cho mỗi tổ hợp backbone/thiết lập, xếp hạng bằng validation macro-F1 (sau đó xét validation loss khi hòa). Cấu hình thắng được khóa trước khi đánh giá test; test không tham gia chọn siêu tham số. Model, cấu hình, lịch sử huấn luyện và metric được lưu trong `deep_learning/outputs/`. Có thêm script đánh giá run đã khóa, dự đoán ảnh và tạo confusion matrix.
+
+### Embedding + học máy
+
+[README embedding](embedding_ml/README.md) trích embedding từ backbone ImageNet đóng băng, sau đó dùng classifier học máy để phân loại. ResNet50 tạo vector 2.048 chiều; EfficientNet-B0 tạo vector 1.280 chiều. Embedding được trích theo batch và lưu cùng nhãn, `label_id` và split trong CSV.
+
+Trích vector cho cả hai backbone:
+
+```bash
+python embedding_ml/extract_embedding.py \
+  --data-dir data/dataset_6class_crops_v2 \
+  --labels-csv data/train_test_split/labels_split_unk3000.csv \
+  --output-dir data/embedding_csv --device auto
+```
+
+Sau đó chạy `embedding_ml/train_search.py` để tìm cấu hình cho hai backbone và bốn classifier. Mỗi cấu hình được fit trên train, chọn theo macro-F1 validation; test chỉ dùng báo cáo kết quả cuối. Model và kết quả được lưu theo các đường dẫn truyền vào lệnh. Pipeline cũng có lệnh dự đoán một hay nhiều ảnh và tạo confusion matrix từ embedding đã lưu.
+
+Chi tiết tham số, thiết bị chạy (`mps`, `cpu`, `auto`) và đường dẫn đầu ra mặc định được ghi trong hai README thành phần.
 
 ## Phiên bản kết quả
 
