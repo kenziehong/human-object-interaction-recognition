@@ -1,8 +1,20 @@
 # Chuẩn bị dữ liệu: `tao_dataset_6class.py`
 
-Gộp 4 bộ dữ liệu (V-COCO, PASCAL VOC 2012 Action, HICO-DET, Stanford40) thành **1 thư mục ảnh crop người, 6 lớp**: `hold`, `ride`, `eat/drink`, `talk_on_phone`, `work_on_computer`, `unknown`. Mỗi ảnh là 1 người, cắt theo bbox người đã nới rộng. **Không chia train/val/test.**
+Cắt lại bộ ảnh crop người 6 lớp (`hold`, `ride`, `eat/drink`, `talk_on_phone`, `work_on_computer`, `unknown`) **theo cách cắt "người + vật"**: người có vật tương tác thì khung bao cả người lẫn vật, người không có vật thì cắt quanh người.
 
-Nhãn theo `Dinh_nghia_bai_toan_va_cac_lop_VCOCO.docx`: phần định nghĩa giữ nguyên, phần quy tắc (thủ tục B0–B8) viết lại cho từng nguồn. Không đủ căn cứ xếp lớp thì là `ignore` (N5): không xuất crop.
+- **Crop**: một ảnh nhỏ cắt ra từ ảnh gốc, chứa một người (và vật người đó tương tác, nếu có).
+- **bbox** (bounding box, khung chữ nhật bao quanh một đối tượng): viết `(x1, y1, x2, y2)`, tức góc trên-trái và góc dưới-phải, tính bằng pixel.
+
+Script **không chạy mô hình nhận diện nào**. Nó dùng bbox người và bbox vật có sẵn trong annotation (nhãn do người gán) của từng bộ dữ liệu.
+
+## Giữ nguyên và đổi gì
+
+| | |
+|---|---|
+| **Giữ nguyên** | danh sách crop, tên file, thư mục lớp, nhãn (đọc từ `<vao>/labels.csv`) |
+| **Chỉ đổi** | khung cắt của mỗi crop |
+
+Ví dụ: crop `ride/vcoco_123_456.jpg` vẫn tên đó, vẫn nhãn `ride`. Khác là trước đây nó chỉ là người nới 20%, nay nếu người đang cưỡi xe đạp thì khung rộng ra để chứa cả chiếc xe.
 
 ## Cài đặt
 
@@ -10,69 +22,108 @@ Nhãn theo `Dinh_nghia_bai_toan_va_cac_lop_VCOCO.docx`: phần định nghĩa gi
 pip install pillow pyarrow
 ```
 
-Cần khoảng **5 GB** trống cho ảnh gốc tải về (`_raw_cache/`) và có mạng ở lần chạy đầu.
-
-## Chuẩn bị thư mục
-
-Script tìm mọi file **cạnh chính nó** (`ROOT` = thư mục chứa file `.py`). Đặt script vào thư mục có sẵn các file đầu vào sau (do các notebook EDA tạo ra):
-
-```
-<thư mục làm việc>/
-├── tao_dataset_6class.py
-├── vcoco_6class_crops/vcoco_6class_crops/labels.csv   nhãn + khung cắt của V-COCO
-└── Summary/
-    ├── labels_6class_v_coco.csv                       URL ảnh COCO
-    └── labels_6class_pascal_voc.csv                   bbox + hành động gốc của từng người trong VOC
-```
-
-Repo này **không** chứa các file đầu vào trên. Trên máy hiện tại, thư mục làm việc là `~/Documents/Datasets_v2/` (đã có sẵn đầu vào và `_raw_cache/`).
+Cần thư mục ảnh gốc `_raw_cache/` (khoảng 5 GB: ảnh COCO, PASCAL VOC 2012, Stanford40, HICO-DET) và bộ crop đã lọc tay `dataset_6class_crops/` làm đầu vào. Trên máy hiện tại cả hai nằm trong `~/Documents/Datasets_v2/`. Script này **không tự tải** ảnh gốc.
 
 ## Chạy
 
 ```bash
-cd <thư mục làm việc>
-python tao_dataset_6class.py                  # chạy cả 4 bước
-python tao_dataset_6class.py --xem-mau        # thêm: lưu lưới ảnh mẫu từng (nguồn, lớp) vào xem_mau/ để soát bằng mắt
-python tao_dataset_6class.py --khong-kiem-tra # bỏ bước 4 (kiểm tra)
+python tao_dataset_6class.py
+python tao_dataset_6class.py --raw ~/Documents/Datasets_v2/_raw_cache \
+    --vao ~/Documents/Datasets_v2/dataset_6class_crops \
+    --ra  ../data/dataset_6class_crops_v3
 ```
 
-Các bước (chạy lại thì bước nào xong rồi sẽ được bỏ qua, ví dụ ảnh đã tải thì không tải lại):
+| tham số | mặc định | ý nghĩa |
+|---|---|---|
+| `--raw` | `~/Documents/Datasets_v2/_raw_cache` | thư mục ảnh gốc |
+| `--vao` | `../data/dataset_6class_crops` | bộ crop đầu vào (cần `labels.csv`, tuỳ chọn `labels_ignore.csv`) |
+| `--ra` | `../data/dataset_6class_crops_v3` | thư mục ghi kết quả |
 
-1. **Tải ảnh gốc** về `_raw_cache/` (~4,8 GB): PASCAL VOC 2012, Stanford40 bản gốc, 2 shard đầu của HICO-DET (3.000 ảnh, trên Hugging Face), ảnh COCO cần cho V-COCO.
-2. **Gán nhãn và cắt ảnh**: gán nhãn từng người theo quy tắc của từng nguồn, cắt theo bbox người nới 20% mỗi phía, lưu vào thư mục lớp.
-3. **Ghi kết quả**: xoá crop cũ không còn hợp lệ, ghi `labels.csv` và `labels_ignore.csv`, in bảng số lượng theo (lớp, nguồn) và lý do ignore.
-4. **Kiểm tra**: mỗi dòng `labels.csv` khớp đúng 1 file, ảnh mở được và đúng kích thước, không có crop trùng nhau, crop V-COCO trùng với bộ crop mẫu `vcoco_6class_crops`. Có lỗi thì script thoát với mã 1.
+Chạy xong in: số crop mỗi nguồn, kiểm tra tên file khớp bộ đầu vào, bảng số crop "người + vật" / "chỉ người", các vật được giữ nhiều nhất và lý do vật bị bỏ.
+
+## Cách cắt ảnh
+
+**Bước 1. Lọc vật.** Vật có cạnh ngắn hơn 32 px bị bỏ (`MIN_CANH`), vì khung quá nhỏ thì không đáng tin. Ví dụ: một chiếc cốc cao 20 px trong ảnh không được tính.
+
+**Bước 2. Gán vật cho người.** Vật thuộc về người nào có bbox **chạm** bbox vật. Nếu chạm nhiều người thì thuộc người có tâm gần tâm vật nhất. Vật bị bỏ nếu rơi vào một trong ba trường hợp:
+
+| lý do bỏ (cột `vat_bo`) | điều kiện | ví dụ |
+|---|---|---|
+| đồ nội thất (nền) | tên vật thuộc `DO_NEN` = giường, ghế sofa, bàn ăn, ghế dài, bồn cầu | người ngồi trên sofa thì không lấy cả sofa |
+| to hơn 4 lần người | diện tích vật > `VAT_TO_TOI_DA` (4) × diện tích người | chiếc xe buýt rất lớn so với người đứng cạnh |
+| khung vật chứa người khác | tâm của một người khác nằm trong bbox vật | bbox "bàn" bao luôn người thứ hai |
+
+**Bước 3. Chọn khung cắt.**
+
+| chế độ (cột `che_do`) | khi nào | khung cắt |
+|---|---|---|
+| `người + vật` | người có ít nhất 1 vật được giữ | khung nhỏ nhất bao người và mọi vật của người đó, **không nới** |
+| `chỉ người` | người không có vật | bbox người nới 20% mỗi phía (hàm `khung_cat`) |
+
+Với `chỉ người`: bbox `(x1, y1, x2, y2)`, `w = x2 - x1`, `h = y2 - y1`, khung là `(x1 - 0.2·w, y1 - 0.2·h, x2 + 0.2·w, y2 + 0.2·h)`, tức rộng và cao gấp 1,4 lần bbox. Phía nào vượt ra ngoài ảnh thì bị cắt ở mép ảnh, không độn viền. Đây cũng là khung của bộ v1 cũ.
+
+## Annotation dùng cho từng nguồn
+
+| nguồn | người | vật |
+|---|---|---|
+| `v_coco` | mọi annotation `person` của ảnh trong `instances_vcoco_all_2014.json` | mọi annotation không phải người, bỏ `iscrowd` (nhãn đám đông) |
+| `hico_det` | bbox người của các cặp tương tác dương, gom bbox trùng (IoU ≥ 0.5) | bbox vật của các cặp đó, gom theo tên + IoU |
+| `pascal_voc` | bbox người | **không có** → luôn là `chỉ người` |
+| `stanford40` | bbox người | **không có** → luôn là `chỉ người` |
+
+- **IoU** (Intersection over Union): diện tích phần giao chia diện tích phần hợp của hai bbox. Hai bbox trùng hẳn thì IoU = 1, không chạm nhau thì IoU = 0.
+- HICO-DET chỉ cho bbox của vật **có tương tác**, nên vật khác trong ảnh không được biết, và crop HICO-DET có thể thiếu vật so với V-COCO.
+- Script dừng với lỗi nếu bbox người trong annotation lệch bbox trong `labels.csv` quá 1 px, để chắc rằng cùng một người được cắt lại.
 
 ## Kết quả
 
 ```
-dataset_6class_crops/
+dataset_6class_crops_v3/
 ├── hold/  ride/  eat_drink/  talk_on_phone/  work_on_computer/  unknown/
 │       <nguồn>_<id>.jpg
-├── labels.csv           mỗi dòng 1 crop (cột quy_tac: bước nào quyết định nhãn)
-└── labels_ignore.csv    mỗi dòng 1 người bị loại, kèm lý do (cột ly_do)
+├── labels.csv           mỗi dòng 1 crop
+└── labels_ignore.csv    chép nguyên từ bộ đầu vào (người đã bị loại)
 ```
 
-- Tiền tố tên file cho biết nguồn: `vcoco_<image_id>_<ann_id>`, `voc_<mã ảnh>_<thứ tự người>`, `hico_train_<idx>_<thứ tự người>`, `stanford40_<hành động>_<số>`.
-- Thư mục `eat_drink/` ứng với nhãn `eat/drink` trong `labels.csv`.
-- Đọc bằng `torchvision.datasets.ImageFolder('dataset_6class_crops')` hoặc đọc `labels.csv`.
+`labels.csv` giữ mọi cột của bộ đầu vào, cột `crop_bbox` được thay bằng khung mới, và thêm 4 cột:
 
-Chạy script cho ra bộ **trước khi lọc tay** (24.408 crop). Bộ đang dùng (22.366 crop) đã bỏ thêm 2.042 crop mờ, quá nhỏ, sai nhãn, trùng lặp; chi tiết ở `dataset_6class_crops/README.md` trong thư mục làm việc.
+| cột | nội dung |
+|---|---|
+| `crop_bbox_v1` | khung cắt cũ (người nới 20%) để so sánh |
+| `che_do` | `người + vật` hoặc `chỉ người` |
+| `vat` | vật được giữ, dạng `tên:x1,y1,x2,y2`, nhiều vật ngăn bằng `\|` |
+| `vat_bo` | vật bị bỏ kèm lý do, dạng `tên:lý do` |
 
-## Cách cắt ảnh
+Thư mục `eat_drink/` ứng với nhãn `eat/drink`. Đọc bằng `torchvision.datasets.ImageFolder` hoặc đọc `labels.csv`.
 
-Hàm `khung_cat` (dòng 65–70): với bbox người `(x1, y1, x2, y2)`, `w = x2 - x1`, `h = y2 - y1`, khung cắt là
+Bộ đã lọc tay có **22.366 crop**:
 
-```
-(x1 - 0.2·w,  y1 - 0.2·h,  x2 + 0.2·w,  y2 + 0.2·h)
-```
+| nguồn | số crop |
+|---|---|
+| v_coco | 14.090 |
+| stanford40 | 4.103 |
+| pascal_voc | 2.753 |
+| hico_det | 1.420 |
 
-tức crop rộng/cao gấp 1,4 lần bbox. Phía nào vượt ra ngoài ảnh thì bị cắt lại ở mép ảnh (`max(0, …)`, `min(W/H, …)`), các phía khác vẫn nới bình thường; không độn viền. V-COCO không qua hàm này mà lấy khung cắt có sẵn trong `vcoco_6class_crops/.../labels.csv` (cũng nới 20%).
+| lớp | số crop |
+|---|---|
+| unknown | 12.533 |
+| ride | 2.864 |
+| hold | 2.701 |
+| eat/drink | 1.486 |
+| work_on_computer | 1.455 |
+| talk_on_phone | 1.327 |
+
+Trong đó 8.927 crop là `người + vật` và 13.439 crop là `chỉ người`.
 
 ## Tham số chỉnh trong file
 
 | biến | mặc định | ý nghĩa |
 |---|---|---|
-| `PAD` | `0.20` | tỉ lệ nới bbox người mỗi phía |
+| `PAD` | `0.20` | tỉ lệ nới bbox người mỗi phía (chế độ `chỉ người`) |
+| `DO_NEN` | giường, sofa, bàn ăn, ghế dài, bồn cầu | vật nền luôn bị bỏ |
+| `VAT_TO_TOI_DA` | `4.0` | vật lớn hơn người bao nhiêu lần thì bị bỏ |
+| `MIN_CANH` | `32` | cạnh ngắn nhất (px) của vật được giữ |
 | `JPEG_QUALITY` | `95` | chất lượng JPEG khi lưu crop |
-| `HICO_N` | `3000` | số ảnh đầu của split train HICO-DET; tăng thì phải thêm shard vào `CAN_TAI` (mỗi shard ~2.933 ảnh) |
+
+`PAD`, `DO_NEN`, `VAT_TO_TOI_DA`, `MIN_CANH` là cách cắt gốc; `web_app` dùng cùng giá trị khi chạy thật. Đổi ở đây thì đổi cả `web_app/app.py` và `web_app/dphoi_detector.py`.

@@ -1,26 +1,26 @@
-"""v2 của tao_dataset_6class.py: cắt lại đúng các crop của dataset_6class_crops (bộ đã lọc) theo CÁCH CẮT CỦA WEB_APP,
+"""Cắt lại đúng các crop của dataset_6class_crops (bộ đã lọc) theo cách cắt "người + vật",
 dùng bbox người + vật CÓ SẴN trong annotation của từng bộ (không chạy mô hình nào).
 
 Giữ nguyên: danh sách crop, tên file, thư mục lớp, nhãn (đọc từ <vao>/labels.csv). Chỉ đổi khung cắt.
 
-Cách cắt = quy tắc 2 và 3 của web_app/app.py (hàm tao_crop), chép nguyên sang đây, thay detector bằng annotation:
-  2. Gán vật cho người: vật thuộc về người nếu khung vật CHẠM khung người; chạm nhiều người thì thuộc người có tâm
+Cách cắt gồm 2 quy tắc (web_app/app.py làm theo đúng quy tắc này khi chạy thật, với bbox lấy từ detector):
+  1. Gán vật cho người: vật thuộc về người nếu khung vật CHẠM khung người; chạm nhiều người thì thuộc người có tâm
      gần tâm vật nhất. Bỏ vật: đồ nội thất lớn (DO_NEN), to hơn 4 lần người, khung vật chứa tâm của người khác.
-  3. Khung cắt:  a. người có vật  → khung nhỏ nhất bao người + các vật của người đó, không nới;
+  2. Khung cắt:  a. người có vật  → khung nhỏ nhất bao người + các vật của người đó, không nới;
                  b. chỉ có người → bbox người nới 20% mỗi phía (= khung cắt của bộ v1).
 
 Annotation dùng cho từng nguồn:
   v_coco      người + vật: mọi annotation COCO của ảnh (instances_vcoco_all_2014.json), bỏ iscrowd.
   hico_det    người + vật: bbox người/vật của các cặp HOI dương; gom bbox trùng (IoU ≥ 0.5) như v1 (tach_nguoi).
               HICO-DET chỉ gán bbox cho vật có tương tác, nên vật khác trong ảnh không được biết.
-  pascal_voc  chỉ người (VOC Action không gán bbox vật)        → luôn là quy tắc 3b.
-  stanford40  chỉ người (Stanford40 chỉ có bbox người)          → luôn là quy tắc 3b.
-Vật có cạnh < 32 px bị bỏ, giống bước lọc khung quá nhỏ của detector trong web_app (min_canh=32).
+  pascal_voc  chỉ người (VOC Action không gán bbox vật)        → luôn là quy tắc 2b.
+  stanford40  chỉ người (Stanford40 chỉ có bbox người)          → luôn là quy tắc 2b.
+Vật có cạnh < 32 px bị bỏ (MIN_CANH): khung quá nhỏ thì không đáng tin.
 
-Cần: pip install pillow pyarrow      Dữ liệu gốc: thư mục _raw_cache/ do tao_dataset_6class.py tải về.
+Cần: pip install pillow pyarrow      Dữ liệu gốc: thư mục _raw_cache/ (ảnh COCO, VOC, Stanford40, HICO-DET) tải sẵn.
 
-    python tao_dataset_6class_v2.py
-    python tao_dataset_6class_v2.py --raw ~/Documents/Datasets_v2/_raw_cache \
+    python tao_dataset_6class.py
+    python tao_dataset_6class.py --raw ~/Documents/Datasets_v2/_raw_cache \
         --vao ../data/dataset_6class_crops --ra ../data/dataset_6class_crops_v3
 """
 import argparse, ast, csv, io, json, math, os, re, tarfile, time, zipfile
@@ -31,7 +31,7 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 JPEG_QUALITY = 95
 
-# ---- giống web_app/app.py và web_app/dphoi_detector.py
+# ---- tham số của cách cắt (web_app dùng cùng giá trị)
 PAD = 0.20
 DO_NEN = {'bed', 'couch', 'dining table', 'bench', 'toilet'}
 VAT_TO_TOI_DA = 4.0
@@ -39,7 +39,7 @@ MIN_CANH = 32
 
 
 def khung_cat(bbox, W, H):
-    """bbox người → nới PAD mỗi phía, không vượt ra ngoài ảnh (dphoi_detector.khung_cat)."""
+    """bbox người → nới PAD mỗi phía, không vượt ra ngoài ảnh."""
     x1, y1, x2, y2 = bbox
     w, h = x2 - x1, y2 - y1
     return (max(0, math.floor(x1 - PAD * w)), max(0, math.floor(y1 - PAD * h)),
@@ -182,7 +182,7 @@ def nguon_hico(raw, rows):
 
 
 def nguon_chi_nguoi(rows, mo_anh):
-    """VOC, Stanford40: không có bbox vật → mỗi người tự cắt theo quy tắc 3b."""
+    """VOC, Stanford40: không có bbox vật → mỗi người tự cắt theo quy tắc 2b."""
     for src, img in mo_anh:
         ds = rows[src]
         yield src, img, [so_nguyen(r['person_bbox']) for r in ds], [], {r['crop_path']: i for i, r in enumerate(ds)}
